@@ -11,7 +11,7 @@ def main():
     def callback(ch, method, properties, body):
         print(" [x] Received %r" % body)
 
-    channel.basic_consume(queue='velocity', on_message_callback=callback, auto_ack=True)
+    channel.basic_consume(queue='car_0', on_message_callback=callback, auto_ack=True)   #Hardcoded para testar o carro 0
 
     print(' [*] Waiting for messages. To exit press CTRL+C')
     channel.start_consuming()
