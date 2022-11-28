@@ -1,5 +1,7 @@
 import json
+import os
 import random
+import sys
 import time
 import numpy
 import pika
@@ -52,14 +54,12 @@ class velocity_sensor:
 
 
 if __name__ == '__main__':
-    v0 = velocity_sensor(0, current_velocity=50, max_acceleration=3.3)
-    v0.run()
-    
-
-
-#Gerar dados:
-
-# 1 - Escolher um tipo de local e utiliza-lo por 5 minutos
-# 2 - Escolher um máximo de velocidade aleatório entre as possíveis
-# 3 - Gerar uma aceleração aleatoria entre -max_acceleration e max_acceleration
-# 4 - Alterar o valor, desde que não ultrapasse o máximo de velocidade, nem o mínimo de 0
+    try:
+        v0 = velocity_sensor(0, current_velocity=50, max_acceleration=3.3)
+        v0.run()
+    except KeyboardInterrupt:
+        print('Interrupted')
+        try:
+            sys.exit(0)
+        except SystemExit:
+            os._exit(0)
