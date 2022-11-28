@@ -6,7 +6,7 @@ def main():
     connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
     channel = connection.channel()
 
-    channel.queue_declare(queue='velocity') # if queue does not exist, create it
+    channel.queue_declare(queue='car_0') # if queue does not exist, create it
 
     def callback(ch, method, properties, body):
         print(" [x] Received %r" % body)
