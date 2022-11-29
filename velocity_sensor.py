@@ -74,7 +74,10 @@ class velocity_sensor:
 
 
     def run(self):
-        connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+        # connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+        connection = pika.BlockingConnection(pika.ConnectionParameters(host='172.19.0.3'))
+        
+        
         channel = connection.channel()
         channel.queue_declare(queue='car_' + str(self.id)) # if queue does not exist, create it
 
