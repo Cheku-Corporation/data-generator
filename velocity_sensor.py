@@ -74,12 +74,12 @@ class velocity_sensor:
 
 
     def run(self):
-        # connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
-        connection = pika.BlockingConnection(pika.ConnectionParameters(host='172.19.0.3'))
+        connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+        # connection = pika.BlockingConnection(pika.ConnectionParameters(host='172.19.0.3'))
         
         
         channel = connection.channel()
-        channel.queue_declare(queue='car_' + str(self.id)) # if queue does not exist, create it
+        channel.queue_declare(queue='car_queue') # if queue does not exist, create it
 
         while True:
             road_type = numpy.random.choice(list(self.velocity.keys()), p=[0.5, 0.3, 0.2]) #Probability of each type of road
@@ -102,8 +102,8 @@ class velocity_sensor:
                     self.current_velocity, self.current_gear = generate_velocity(self, max_velocity, previous)
                 
                     
-                    message = {'tag': 'velocity', 'timestamp': time.time(), 'velocity': self.current_velocity, 'gear': self.current_gear}
-                    channel.basic_publish(exchange='', routing_key='car_' + str(self.id), body=json.dumps(message))
+                    message = {'id': self.id, 'timestamp': time.time(), 'velocity': self.current_velocity, 'gear': self.current_gear}
+                    channel.basic_publish(exchange='', routing_key='car_queue', body=json.dumps(message))
                     # print("Current velocity: ", current_velocity)
         connection.close()
 
