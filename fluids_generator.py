@@ -24,3 +24,4 @@ def generate_oil(self, oil):
         oil = 0
     
     return oil
+
