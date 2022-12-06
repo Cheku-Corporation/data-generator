@@ -29,7 +29,7 @@ def generate_velocity(self, max_velocity):
             else:
                 self.current_velocity -= aceleracao
     
-    return self.current_velocity
+    return round(self.current_velocity, 2)
     
 
 def generate_gear(self, max_velocity, previous):
@@ -61,7 +61,16 @@ def generate_gear(self, max_velocity, previous):
         gear = 6
     
     
-    return gear
+    return round(gear,0)
+
+
+def generate_rpm(self, gear):
+    if gear == 0:
+        rpm = 0
+    else:
+        rpm = self.current_velocity / gear * 100
+    
+    return round(rpm,2)
 
 
     
@@ -71,12 +80,13 @@ def generate_gear(self, max_velocity, previous):
 
 
 class velocity_sensor:
-    def __init__(self, id=0, current_velocity=0.0, current_gear = 0,max_acceleration = 3.3):
+    def __init__(self, id=0, current_velocity=0.0, current_gear = 0,max_acceleration = 3.3, current_rpm = 0):
         self.id = id    #Vehicle ID
         self.current_velocity = current_velocity    #Initial Current velocity
         self.current_gear = current_gear
         self.max_acceleration = max_acceleration    #Maximum acceleration in km/0.1s^2
         self.velocity = {'inside_locality': ([0, 20, 40, 60],[0.05, 0.15, 0.33, 0.47]), 'outside_locality': ([0, 20, 40, 60, 80, 100],[0.03, 0.07, 0.12, 0.18, 0.38, 0.22]), 'highway': ([0, 20, 40, 60, 80, 100, 120, 140],[0.01, 0.05, 0.07, 0.10, 0.12, 0.20, 0.35, 0.10])}    #Max velocity for each type of road
+        self.current_rpm = current_rpm
 
 
 
@@ -110,9 +120,10 @@ class velocity_sensor:
 
                     #Generate current velocity, and current gear
                     self.current_velocity = generate_velocity(self, max_velocity)
+                    self.current_rpm = generate_rpm(self, self.current_gear)
                 
                     
-                    message = {'id': self.id, 'timestamp': time.time(), 'velocity': self.current_velocity, 'gear': self.current_gear}
+                    message = {'id': self.id, 'timestamp': time.time(), 'velocity': self.current_velocity, 'gear': self.current_gear, 'rpm': self.current_rpm}
                     channel.basic_publish(exchange='', routing_key='car_queue', body=json.dumps(message))
                     # print("Current velocity: ", current_velocity)
         connection.close()
