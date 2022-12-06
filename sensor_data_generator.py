@@ -71,7 +71,7 @@ class velocity_sensor:
 
 if __name__ == '__main__':
     try:
-        v0 = velocity_sensor(0, current_velocity=50, current_gear=0, max_acceleration=3.3)
+        v0 = velocity_sensor(0, current_velocity=50, current_gear=0, max_acceleration=3.3, current_rpm=0, current_fuel=100, current_water=100, current_oil=100)
         v0.run()
     except KeyboardInterrupt:
         print('Interrupted')
