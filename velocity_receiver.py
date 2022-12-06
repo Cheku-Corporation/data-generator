@@ -6,12 +6,12 @@ def main():
     connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
     channel = connection.channel()
 
-    channel.queue_declare(queue='car_0') # if queue does not exist, create it
+    channel.queue_declare(queue='car_queue') # if queue does not exist, create it
 
     def callback(ch, method, properties, body):
         print(" [x] Received %r" % body)
 
-    channel.basic_consume(queue='car_0', on_message_callback=callback, auto_ack=True)   #Hardcoded para testar o carro 0
+    channel.basic_consume(queue='car_queue', on_message_callback=callback, auto_ack=True)   #Hardcoded para testar o carro 0
 
     print(' [*] Waiting for messages. To exit press CTRL+C')
     channel.start_consuming()

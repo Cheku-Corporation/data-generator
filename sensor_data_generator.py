@@ -7,35 +7,7 @@ import numpy
 import pika
 
 
-def generate_velocity(self, max_velocity, previous):
-    #Calcular a mudança em que me encontro
-    if self.current_velocity < 10:
-        if max_velocity == 0:
-            if self.current_velocity == 0:
-                gear = 0
-            else:
-                if previous:
-                    probabilidade = random.uniform(0, 1)    #Probabilidade de acelerar ou reduzir
-                    if probabilidade < 0.7:
-                        gear = 1
-                    else:
-                        gear = -1
-                else:
-                    gear = 1
-        else:
-            gear = 1
-    elif self.current_velocity < 20:
-        gear = 2
-    elif self.current_velocity < 35:
-        gear = 3
-    elif self.current_velocity < 50:
-        gear = 4
-    elif self.current_velocity < 60:
-        gear = 5
-    else:
-        gear = 6
-
-
+def generate_velocity(self, max_velocity):
     if self.current_velocity > max_velocity:
         self.current_velocity -= random.uniform(0, self.max_acceleration)
         
@@ -57,7 +29,42 @@ def generate_velocity(self, max_velocity, previous):
             else:
                 self.current_velocity -= aceleracao
     
-    return self.current_velocity, gear
+    return self.current_velocity
+    
+
+def generate_gear(self, max_velocity, previous):
+    #Calcular a mudança em que me encontro
+    if self.current_velocity < 10:
+        if max_velocity == 0:
+            if self.current_velocity == 0:
+                gear = 0
+            else:
+                if previous:
+                    probabilidade = random.uniform(0, 1)    #Probabilidade de acelerar ou reduzir
+                    if probabilidade < 0.7:
+                        gear = 1
+                    else:
+                        gear = -1
+                else:
+                    gear = 1
+        else:
+            gear = 1
+    elif self.current_velocity < 15:
+        gear = 2
+    elif self.current_velocity < 30:
+        gear = 3
+    elif self.current_velocity < 50:
+        gear = 4
+    elif self.current_velocity < 80:
+        gear = 5
+    else:
+        gear = 6
+    
+    
+    return gear
+
+
+    
 
 
 
@@ -92,6 +99,9 @@ class velocity_sensor:
                     previous = True
                 else:
                     previous = False
+                
+                #Gerar a mudança
+                self.current_gear = generate_gear(self, max_velocity, previous)
 
                 #Gerar velocidade máxima aleatória e utiliza-la por 10 segundos
                 max_velocity = numpy.random.choice(self.velocity[road_type][0], p=self.velocity[road_type][1]) #Probability of each type of road
@@ -99,7 +109,7 @@ class velocity_sensor:
                     time.sleep(0.1)
 
                     #Generate current velocity, and current gear
-                    self.current_velocity, self.current_gear = generate_velocity(self, max_velocity, previous)
+                    self.current_velocity = generate_velocity(self, max_velocity)
                 
                     
                     message = {'id': self.id, 'timestamp': time.time(), 'velocity': self.current_velocity, 'gear': self.current_gear}
