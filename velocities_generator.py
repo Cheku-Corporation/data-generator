@@ -1,6 +1,5 @@
 #Velocities Generators
 import math
-# import random
 
 
 def distance(lon1, lat1, lon2, lat2):
@@ -69,29 +68,3 @@ def generate_rpm(current_velocity, gear):
         
     
     return rpm
-
-
-
-# def generate_velocity(self, max_velocity):
-#     if self.current_velocity > max_velocity:
-#         self.current_velocity -= random.uniform(0, self.max_acceleration)
-        
-#     else:
-#         aceleracao = random.uniform(0, self.max_acceleration)
-#         probabilidade = random.uniform(0, 1)    #Probabilidade de acelerar ou reduzir
-#         if probabilidade < 0.7:
-#             if max_velocity != 0:
-#                 self.current_velocity += aceleracao
-#             else:
-#                 if self.current_velocity - aceleracao < 0:
-#                     self.current_velocity = 0
-#                 else:
-#                     self.current_velocity -= aceleracao
-#         else:
-#             if self.current_velocity - aceleracao < 0:
-#                 self.current_velocity = 0
-#                 gear = 0
-#             else:
-#                 self.current_velocity -= aceleracao
-    
-#     return self.current_velocity

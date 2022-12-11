@@ -12,19 +12,6 @@ import coordinates_generator
 from termometer_generator import *
 
 
-#Channels:
-#car_queue
-#fluids
-#velocities
-#coordinates
-#lights_status
-#motor_status
-#tires_status
-
-
-
-
-
 class velocity_sensor:
     def __init__(self, id=0, current_velocity=0.0, current_fuel = 100, current_water = 100, current_oil = 100, current_tires_temperature = 40, current_engine_temperature = 70):
         self.id = id    #Vehicle ID
@@ -234,40 +221,3 @@ if __name__ == '__main__':
             sys.exit(0)
         except SystemExit:
             os._exit(0)
-
-
-        # while True:
-        #     road_type = numpy.random.choice(list(self.velocity.keys()), p=[0.5, 0.3, 0.2]) #Probability of each type of road
-        #     #Com o tipo de rua, gerar dados aleatórios durante 5 minutos
-        #     max_velocity = None
-        #     for i in range(30):
-                
-        #         #Check if car was stopped
-        #         if max_velocity == 0:
-        #             previous = True
-        #         else:
-        #             previous = False
-                
-        #         #Gerar a mudança
-        #         self.current_gear = generate_gear(self, max_velocity, previous)
-
-        #         #Gerar velocidade máxima aleatória e utiliza-la por 10 segundos
-        #         max_velocity = numpy.random.choice(self.velocity[road_type][0], p=self.velocity[road_type][1]) #Probability of each type of road
-        #         for i in range(100):
-        #             time.sleep(0.1)
-
-        #             #Generate current velocity, and current gear
-        #             self.current_velocity = generate_velocity(self, max_velocity)
-        #             self.current_rpm = generate_rpm(self, self.current_gear)
-        #             if i%10 == 0:
-        #                 self.current_fuel = generate_fuel(self, self.current_fuel, self.current_gear, self.current_rpm)
-        #                 self.current_water = generate_water(self, self.current_water)
-        #                 self.current_oil = generate_oil(self, self.current_oil)
-        #                 message = {'id': self.id, 'timestamp': time.time(), 'current_fuel': round(self.current_fuel/100, 2), 'current_water': round(self.current_water/100,2), 'current_oil': round(self.current_oil/100,2)}
-        #                 channel.basic_publish(exchange='', routing_key='fluids', body=json.dumps(message))
-                
-                    
-        #             message = {'id': self.id, 'timestamp': time.time(), 'velocity': round(self.current_velocity,2), 'gear': round(self.current_gear,2), 'rpm': round(self.current_rpm,2)}
-        #             channel.basic_publish(exchange='', routing_key='velocities', body=json.dumps(message))
-        #             # print("Current velocity: ", current_velocity)
-        # connection.close()

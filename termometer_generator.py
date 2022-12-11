@@ -1,13 +1,3 @@
-#O que falta gerar?
-
-#Temperatura do motor   - 85-90, começa a ser preocupante apartir dos 105 -Done
-#Estado do motor    -   Ligado ou desligado -Done
-
-#Estado das luzes   - Done
-
-#Temperatura dos pneus - Done
-#Pressão dos pneus - Done
-
 import random
 
 
@@ -59,8 +49,6 @@ def engine_temperature(engine_temperature, current_rpm, problem = False):
 
 
 
-
-#2.5 bars
 def tires_pressure(tires_pressure, speed):
     if speed <= 50:
         tires_pressure -= 0.003
