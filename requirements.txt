@@ -1,3 +1,4 @@
 # python -m pip install pika --upgrade
 pika
 numpy
+geopy
