@@ -71,11 +71,13 @@ class velocity_sensor:
             elif self.current_fuel < 100:
 
                 #Probabilidade de colocar combustivel
-                randnumber = random.choice([i for i in reversed(range(100))], p=[i for i in range(100)])
+                somatorio = sum([i for i in range(100)])
+                randnumber = numpy.random.choice([i for i in reversed(range(100))], p=[i/somatorio for i in range(100)])
 
                 if randnumber > self.current_fuel: #Vou abastecer
                     
-                    randfuel = random.choice([i for i in range(100-int(self.current_fuel))], p=[i for i in range(100-int(self.current_fuel))])
+                    somatorio = sum([i for i in range(100-int(self.current_fuel))])
+                    randfuel = numpy.random.choice([i for i in range(100-int(self.current_fuel))], p=[i/somatorio for i in range(100-int(self.current_fuel))])
                     self.current_fuel += randfuel
                     time.sleep(30)  #Abastecendo
 
