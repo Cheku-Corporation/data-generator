@@ -194,7 +194,7 @@ class velocity_sensor:
 
                     
                 self.current_coordinates = self.current_trip[i]
-                message = {'id': self.id, 'timestamp': time.time(), 'coordinates': self.current_coordinates}
+                message = {'id': self.id, 'timestamp': time.time(), 'latitude': self.current_coordinates[0], 'longitude': self.current_coordinates[1]}
                 channel3.basic_publish(exchange='', routing_key='coordinates', body=json.dumps(message))
 
             
