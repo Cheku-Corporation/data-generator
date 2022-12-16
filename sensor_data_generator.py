@@ -234,16 +234,10 @@ class velocity_sensor:
             channel5.basic_publish(exchange='', routing_key='motor_status', body=json.dumps(message))
             logger.debug(message)
 
-            somatorio = sum([i for i in range(1, self.time_between_trips + 1)])
-            if somatorio > 0:
-                randnumber = numpy.random.choice([i for i in range(self.time_between_trips)], p=[i/somatorio for i in range(self.time_between_trips)])
+            if self.time_between_trips > 0:
+                time.sleep(self.time_between_trips)    #Aguardar time_speed antes de voltar a fazer uma viagem
             else:
-                randnumber = 0
-
-            if self.time_speed > 0:
-                time.sleep(randnumber/ self.time_speed)    #Aguardar time_speed antes de voltar a fazer uma viagem
-            else:
-                time.sleep(randnumber)
+                time.sleep(0)
 
 
 
@@ -254,7 +248,7 @@ if __name__ == '__main__':
     parse.add_argument('-w', '--water', default=100, type=float, help='Current water of the car')
     parse.add_argument('-o', '--oil', default=100, type=float, help='Current oil of the car')
     parse.add_argument('-tt', '--time_trips', default=30*60, type=float, help='Time between trips')
-    parse.add_argument('-ts', '--time_speed', default=1, type=float, help='Time speed when stopped')
+    parse.add_argument('-ts', '--time_speed', default=1, type=float, help='Speed of time when the car is stopped')
     # parse.add_argument('-tm', '--time_message', default=1, type=float, help='Time to send a new message')
     args = parse.parse_args()
     try:
