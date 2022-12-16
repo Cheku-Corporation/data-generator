@@ -66,11 +66,11 @@ class velocity_sensor:
             if self.current_fuel == 0:
 
                 #Tenho de abastecer e espero que alguem me traga o combustivel
-                time.sleep(5*60*self.time_speed)
+                time.sleep(5*60/self.time_speed)
 
                 randfuel = random.choice([i for i in range(20)], p=[i for i in range(20)])
                 self.current_fuel += randfuel
-                time.sleep(30*self.time_speed)  #Abastecendo
+                time.sleep(30/self.time_speed)  #Abastecendo
 
             elif self.current_fuel < 100:
 
@@ -83,18 +83,18 @@ class velocity_sensor:
                     somatorio = sum([i for i in range(100-int(self.current_fuel))])
                     randfuel = numpy.random.choice([i for i in range(100-int(self.current_fuel))], p=[i/somatorio for i in range(100-int(self.current_fuel))])
                     self.current_fuel += randfuel
-                    time.sleep(30*self.time_speed)  #Abastecendo
+                    time.sleep(30/self.time_speed)  #Abastecendo
 
             
             if self.engine_problem:
                 #Tenho de esperar o carro esfriar e que alguém o arranje
-                time.sleep(10*60*self.time_speed)
+                time.sleep(10*60/self.time_speed)
                 self.engine_problem = False
                 self.current_engine_temperature = 70
 
             if self.current_lights == "DEAD":
                 #Tenho de esperar o carro esfriar e que alguém o arranje
-                time.sleep(1*60*self.time_speed)
+                time.sleep(1*60/self.time_speed)
                 self.current_lights = "OFF"
                 # print("Enviar mensagem de que as luzes estão a funcionar")
                 message = {'id': self.id, 'timestamp': time.time(), 'lights': self.current_lights}
@@ -208,16 +208,16 @@ class velocity_sensor:
 
             somatorio = sum([i for i in range(self.time_speed)])
             randnumber = numpy.random.choice([i for i in range(self.time_speed)], p=[i/somatorio for i in range(self.time_speed)])
-            time.sleep(randnumber* self.time_speed)    #Aguardar time_speed antes de voltar a fazer uma viagem
+            time.sleep(randnumber/ self.time_speed)    #Aguardar time_speed antes de voltar a fazer uma viagem
 
 
 
 if __name__ == '__main__':
     parse = ArgumentParser()
     parse.add_argument('-id', '--id', default=0, type=int, help='id from running car')
-    parse.add_argument('-f', '--fuel', default=100, type=int, help='Current fuel of the car')
-    parse.add_argument('-w', '--water', default=100, type=int, help='Current water of the car')
-    parse.add_argument('-o', '--oil', default=100, type=int, help='Current oil of the car')
+    parse.add_argument('-f', '--fuel', default=100, type=float, help='Current fuel of the car')
+    parse.add_argument('-w', '--water', default=100, type=float, help='Current water of the car')
+    parse.add_argument('-o', '--oil', default=100, type=float, help='Current oil of the car')
     parse.add_argument('-tt', '--time_trips', default=30*60, type=float, help='Time between trips')
     parse.add_argument('-ts', '--time_speed', default=1, type=float, help='Time speed when stopped')
     # parse.add_argument('-tm', '--time_message', default=1, type=float, help='Time to send a new message')
