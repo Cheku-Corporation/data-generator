@@ -11,9 +11,12 @@ from fluids_generator import *
 import coordinates_generator
 from termometer_generator import *
 
+import logging
+from datetime import date
+
 
 class velocity_sensor:
-    def __init__(self, id=0, current_velocity=0.0, current_fuel = 100, current_water = 100, current_oil = 100, current_tires_temperature = 40, current_engine_temperature = 70, time_between_trips = 30*60, time_speed = 1, message_speed = 1):
+    def __init__(self, id=0, current_velocity=0.0, current_fuel = 100, current_water = 100, current_oil = 100, current_tires_temperature = 40, current_engine_temperature = 70, time_between_trips = 30*60, time_speed = 1):#, message_speed = 1):
         self.id = id    #Vehicle ID
         self.current_velocity = current_velocity    #Initial Current velocity
         self.current_gear = 0   #Initial Current gear
@@ -99,20 +102,25 @@ class velocity_sensor:
                 # print("Enviar mensagem de que as luzes estão a funcionar")
                 message = {'id': self.id, 'timestamp': time.time(), 'lights': self.current_lights}
                 channel4.basic_publish(exchange='', routing_key='lights_status', body=json.dumps(message))
+                logger.debug(message)
 
 
             #Preciso de ligar o carro
             message = {'id': self.id, 'timestamp': time.time(), 'motor_status': "ON", 'motor_temperature': self.current_engine_temperature}
             channel5.basic_publish(exchange='', routing_key='motor_status', body=json.dumps(message))
+            logger.debug(message)
             self.current_coordinates = self.current_trip.pop(0)
             #Preciso de mandar as coordenadas iniciais
             message = {'id': self.id, 'timestamp': time.time(), 'latitude': self.current_coordinates[0], 'longitude': self.current_coordinates[1]}
             channel3.basic_publish(exchange='', routing_key='coordinates', body=json.dumps(message))
+            logger.debug(message)
             #Mandar também o estado dos pneus e das luzes
             message = {'id': self.id, 'timestamp': time.time(), 'tires_pressure': self.current_tires_pressure, 'tires_temperature': self.current_tires_temperature}
             channel6.basic_publish(exchange='', routing_key='tires_status', body=json.dumps(message))
+            logger.debug(message)
             message = {'id': self.id, 'timestamp': time.time(), 'lights': self.current_lights}
             channel4.basic_publish(exchange='', routing_key='lights_status', body=json.dumps(message))
+            logger.debug(message)
             
 
             i = 0
@@ -130,6 +138,7 @@ class velocity_sensor:
                     #Enviar a mensagem
                     message = {'id': self.id, 'timestamp': time.time(), 'lights': self.current_lights}
                     channel4.basic_publish(exchange='', routing_key='lights_status', body=json.dumps(message))
+                    logger.debug(message)
 
 
 
@@ -143,6 +152,7 @@ class velocity_sensor:
                     # print("Pressao: ", self.current_tires_pressure, "Pneus: ", self.current_tires_temperature, "Motor: ", self.current_engine_temperature)
                     message = {'id': self.id, 'timestamp': time.time(), 'tires_pressure': self.current_tires_pressure, 'tires_temperature': self.current_tires_temperature}
                     channel6.basic_publish(exchange='', routing_key='tires_status', body=json.dumps(message))
+                    logger.debug(message)
                     
                     
                     if self.engine_problem and self.current_engine_temperature > 105:
@@ -185,11 +195,13 @@ class velocity_sensor:
 
                         message = {'id': self.id, 'timestamp': time.time(), 'current_fuel': round(self.current_fuel/100, 2), 'current_water': round(self.current_water/100,2), 'current_oil': round(self.current_oil/100,2)}
                         channel.basic_publish(exchange='', routing_key='fluids', body=json.dumps(message))
+                        logger.debug(message)
                         
 
                     
                     message = {'id': self.id, 'timestamp': time.time(), 'velocity': round(self.current_velocity,2), 'gear': round(self.current_gear,2), 'rpm': round(self.current_rpm,2)}
                     channel2.basic_publish(exchange='', routing_key='velocities', body=json.dumps(message))
+                    logger.debug(message)
                     time.sleep(0.1)
                     
                 
@@ -203,8 +215,10 @@ class velocity_sensor:
             self.current_trip = []
             message = {'id': self.id, 'timestamp': time.time(), 'latitude': self.current_coordinates[0], 'longitude': self.current_coordinates[1]}
             channel3.basic_publish(exchange='', routing_key='coordinates', body=json.dumps(message))
+            logger.debug(message)
             message = {'id': self.id, 'timestamp': time.time(), 'motor_status': "OFF", 'motor_temperature': self.current_engine_temperature}
             channel5.basic_publish(exchange='', routing_key='motor_status', body=json.dumps(message))
+            logger.debug(message)
 
             somatorio = sum([i for i in range(self.time_speed)])
             randnumber = numpy.random.choice([i for i in range(self.time_speed)], p=[i/somatorio for i in range(self.time_speed)])
@@ -223,7 +237,16 @@ if __name__ == '__main__':
     # parse.add_argument('-tm', '--time_message', default=1, type=float, help='Time to send a new message')
     args = parse.parse_args()
     try:
-        v0 = velocity_sensor(id=args.id, current_velocity=0, current_fuel=args.fuel, current_water=args.water, current_oil=args.oil, time=args.time_trips, time_speed=args.time_speed, message_speed=args.time_message)
+        v0 = velocity_sensor(id=args.id, current_velocity=0, current_fuel=args.fuel, current_water=args.water, current_oil=args.oil, time_between_trips=args.time_trips, time_speed=args.time_speed)#, message_speed=args.time_message)
+
+        # Create and configure logger
+        today = date.today()
+        logging.basicConfig(filename="logs/logfile_" + str(today) + ".log",
+                            format='%(asctime)s %(message)s',
+                            filemode='a')
+        logger = logging.getLogger()
+        logger.setLevel(logging.DEBUG)
+
         v0.run()
     except KeyboardInterrupt:
         print('Interrupted')
