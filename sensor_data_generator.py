@@ -13,7 +13,7 @@ from termometer_generator import *
 
 
 class velocity_sensor:
-    def __init__(self, id=0, current_velocity=0.0, current_fuel = 100, current_water = 100, current_oil = 100, current_tires_temperature = 40, current_engine_temperature = 70):
+    def __init__(self, id=0, current_velocity=0.0, current_fuel = 100, current_water = 100, current_oil = 100, current_tires_temperature = 40, current_engine_temperature = 70, time_between_trips = 30*60, time_speed = 1, message_speed = 1):
         self.id = id    #Vehicle ID
         self.current_velocity = current_velocity    #Initial Current velocity
         self.current_gear = 0   #Initial Current gear
@@ -31,6 +31,10 @@ class velocity_sensor:
         self.current_engine_temperature = current_engine_temperature
 
         self.current_lights = "OFF"
+
+        self.time_between_trips = time_between_trips
+        self.time_speed = time_speed
+        # self.message_speed = message_speed
 
 
 
@@ -62,11 +66,11 @@ class velocity_sensor:
             if self.current_fuel == 0:
 
                 #Tenho de abastecer e espero que alguem me traga o combustivel
-                time.sleep(5*60)
+                time.sleep(5*60*self.time_speed)
 
                 randfuel = random.choice([i for i in range(20)], p=[i for i in range(20)])
                 self.current_fuel += randfuel
-                time.sleep(30)  #Abastecendo
+                time.sleep(30*self.time_speed)  #Abastecendo
 
             elif self.current_fuel < 100:
 
@@ -79,18 +83,18 @@ class velocity_sensor:
                     somatorio = sum([i for i in range(100-int(self.current_fuel))])
                     randfuel = numpy.random.choice([i for i in range(100-int(self.current_fuel))], p=[i/somatorio for i in range(100-int(self.current_fuel))])
                     self.current_fuel += randfuel
-                    time.sleep(30)  #Abastecendo
+                    time.sleep(30*self.time_speed)  #Abastecendo
 
             
             if self.engine_problem:
                 #Tenho de esperar o carro esfriar e que alguém o arranje
-                time.sleep(10*60)
+                time.sleep(10*60*self.time_speed)
                 self.engine_problem = False
                 self.current_engine_temperature = 70
 
             if self.current_lights == "DEAD":
                 #Tenho de esperar o carro esfriar e que alguém o arranje
-                time.sleep(1*60)
+                time.sleep(1*60*self.time_speed)
                 self.current_lights = "OFF"
                 # print("Enviar mensagem de que as luzes estão a funcionar")
                 message = {'id': self.id, 'timestamp': time.time(), 'lights': self.current_lights}
@@ -100,31 +104,35 @@ class velocity_sensor:
             #Preciso de ligar o carro
             message = {'id': self.id, 'timestamp': time.time(), 'motor_status': "ON", 'motor_temperature': self.current_engine_temperature}
             channel5.basic_publish(exchange='', routing_key='motor_status', body=json.dumps(message))
+            self.current_coordinates = self.current_trip.pop(0)
+            #Preciso de mandar as coordenadas iniciais
+            message = {'id': self.id, 'timestamp': time.time(), 'latitude': self.current_coordinates[0], 'longitude': self.current_coordinates[1]}
+            channel3.basic_publish(exchange='', routing_key='coordinates', body=json.dumps(message))
+            #Mandar também o estado dos pneus e das luzes
+            message = {'id': self.id, 'timestamp': time.time(), 'tires_pressure': self.current_tires_pressure, 'tires_temperature': self.current_tires_temperature}
+            channel6.basic_publish(exchange='', routing_key='tires_status', body=json.dumps(message))
+            message = {'id': self.id, 'timestamp': time.time(), 'lights': self.current_lights}
+            channel4.basic_publish(exchange='', routing_key='lights_status', body=json.dumps(message))
             
 
-            for i, cam in enumerate(self.current_trip):
-
-                if i == 0:
-                    self.current_coordinates = self.current_trip[i]
-                    continue
-
-                #Posso é acrescentar aqui uma probabilidade de o carro parar para fazer abastecimentos
-                #Uma probabilidade de trocar o estado em que as luzes estão
-
-                #De 20 em 20 segundos, gerar um estado de luzes novo
-                if i % 30 == 0:
-                    if self.current_lights != "DEAD":
-                        if random.uniform(0, 1) > 0.90: #Gerar novo estado
-                            self.current_lights = numpy.random.choice(["OFF", "AVG", "MAX", "MIN", "DEAD"], p=[0.53, 0.37, 0.05, 0.03, 0.02])
-                    #Enviar a mensagem
-                    # print("Luzes: ", self.current_lights)
-                    message = {'id': self.id, 'timestamp': time.time(), 'lights': self.current_lights}
-                    channel4.basic_publish(exchange='', routing_key='lights_status', body=json.dumps(message))
-                    
+            i = 0
+            while self.current_trip != []:
+                i += 1
 
 
                 #Enviar a temperatura dos pneus a cada 30 segundos
                 if i % 30 == 0:
+
+                    #Estado das luzes
+                    if self.current_lights != "DEAD":
+                        if random.uniform(0, 1) > 0.90: #Gerar novo estado
+                            self.current_lights = numpy.random.choice(["OFF", "AVG", "MAX", "MIN", "DEAD"], p=[0.53, 0.37, 0.05, 0.03, 0.02])
+                    #Enviar a mensagem
+                    message = {'id': self.id, 'timestamp': time.time(), 'lights': self.current_lights}
+                    channel4.basic_publish(exchange='', routing_key='lights_status', body=json.dumps(message))
+
+
+
                     #Enviar a temperatura dos pneus
                     self.current_tires_pressure = tires_pressure(self.current_tires_pressure, self.current_velocity)
                     self.current_tires_temperature = tires_temperature(self.current_tires_temperature, self.current_velocity)
@@ -138,22 +146,19 @@ class velocity_sensor:
                     
                     
                     if self.engine_problem and self.current_engine_temperature > 105:
-                        message = {'id': self.id, 'timestamp': time.time(), 'motor_status': "OFF", 'motor_temperature': self.current_engine_temperature}
-                        channel5.basic_publish(exchange='', routing_key='motor_status', body=json.dumps(message)) 
                         break
 
 
                 if self.current_fuel <= 0:
-                    message = {'id': self.id, 'timestamp': time.time(), 'motor_status': "OFF", 'motor_temperature': self.current_engine_temperature}
-                    channel5.basic_publish(exchange='', routing_key='motor_status', body=json.dumps(message))
                     break
                     #Espero um tempo random e volto a gerar dados, abastecendo
 
                 
-
-                distancia = distance(self.current_coordinates[0], self.current_coordinates[1], cam[0], cam[1])  #m/s = #distancia/1000km*3600 = km/h
-                velocidade_media = distancia/1000*3600  #Velocidade média naquele segundo
-                aceleracao = (velocidade_media-self.current_velocity)/5  #5 pois é metade de 1 segundo que seriam 10 iterações, ou seja, 5 segundos para igualar e 5 segundos para afastar de forma a que a velocidade média seja coerente
+                print("Coordenadas atuais:", self.current_coordinates)
+                print("Proxima coordenada:", self.current_trip[0])
+                distancia = distance(self.current_coordinates[0], self.current_coordinates[1], self.current_trip[0][0], self.current_trip[0][1])  #m/s = #distancia/1000km*3600 = km/h
+                velocidade_media = distancia/1000*(3600)  #Velocidade média em km/h naquele segundo
+                aceleracao = (velocidade_media-self.current_velocity)/5 #5 pois é metade de 1 segundo que seriam 10 iterações, ou seja, 5 segundos para igualar e 5 segundos para afastar de forma a que a velocidade média seja coerente
                 if abs(aceleracao) > 4:  #Alguma coordenada acabou não sendo gerada
                     self.current_velocity = velocidade_media
                     aceleracao = 0
@@ -177,10 +182,7 @@ class velocity_sensor:
                         
 
                         self.current_oil = generate_oil(self.current_oil)
-                        # if current_oil <= 0.7:  #Aos 0.8 devia ser gerado um aviso no spring boot
-                        #Aqui é como a current_water, a qualquer altura pode ser abastecido
 
-                        # print({'timestamp': time.time(), 'current_fuel': round(self.current_fuel/100, 2), 'current_water': round(self.current_water/100,2), 'current_oil': round(self.current_oil/100,2)})
                         message = {'id': self.id, 'timestamp': time.time(), 'current_fuel': round(self.current_fuel/100, 2), 'current_water': round(self.current_water/100,2), 'current_oil': round(self.current_oil/100,2)}
                         channel.basic_publish(exchange='', routing_key='fluids', body=json.dumps(message))
                         
@@ -193,17 +195,20 @@ class velocity_sensor:
                 
 
                     
-                self.current_coordinates = self.current_trip[i]
-                message = {'id': self.id, 'timestamp': time.time(), 'latitude': self.current_coordinates[0], 'longitude': self.current_coordinates[1]}
-                channel3.basic_publish(exchange='', routing_key='coordinates', body=json.dumps(message))
-
+                self.current_coordinates = self.current_trip.pop(0)
+                #Não é preciso enviar a cada segundo, apenas quando o carro liga e desliga, de forma a não ter demasiadas coordenadas na base de dados e a ser mais fácil gerar o percurso no mapa do front-end
             
 
             #Acabei a minha viagem, vou esperar um coto antes de voltar a fazer outra
             self.current_trip = []
+            message = {'id': self.id, 'timestamp': time.time(), 'latitude': self.current_coordinates[0], 'longitude': self.current_coordinates[1]}
+            channel3.basic_publish(exchange='', routing_key='coordinates', body=json.dumps(message))
             message = {'id': self.id, 'timestamp': time.time(), 'motor_status': "OFF", 'motor_temperature': self.current_engine_temperature}
             channel5.basic_publish(exchange='', routing_key='motor_status', body=json.dumps(message))
-            time.sleep(5*60)    #Aguardar 5 minutos antes de voltar a fazer uma viagem
+
+            somatorio = sum([i for i in range(self.time_speed)])
+            randnumber = numpy.random.choice([i for i in range(self.time_speed)], p=[i/somatorio for i in range(self.time_speed)])
+            time.sleep(randnumber* self.time_speed)    #Aguardar time_speed antes de voltar a fazer uma viagem
 
 
 
@@ -213,9 +218,12 @@ if __name__ == '__main__':
     parse.add_argument('-f', '--fuel', default=100, type=int, help='Current fuel of the car')
     parse.add_argument('-w', '--water', default=100, type=int, help='Current water of the car')
     parse.add_argument('-o', '--oil', default=100, type=int, help='Current oil of the car')
+    parse.add_argument('-tt', '--time_trips', default=30*60, type=float, help='Time between trips')
+    parse.add_argument('-ts', '--time_speed', default=1, type=float, help='Time speed when stopped')
+    # parse.add_argument('-tm', '--time_message', default=1, type=float, help='Time to send a new message')
     args = parse.parse_args()
     try:
-        v0 = velocity_sensor(id=args.id, current_velocity=0, current_fuel=args.fuel, current_water=args.water, current_oil=args.oil)
+        v0 = velocity_sensor(id=args.id, current_velocity=0, current_fuel=args.fuel, current_water=args.water, current_oil=args.oil, time=args.time_trips, time_speed=args.time_speed, message_speed=args.time_message)
         v0.run()
     except KeyboardInterrupt:
         print('Interrupted')
