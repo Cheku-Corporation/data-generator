@@ -54,9 +54,8 @@ class velocity_sensor:
 
         channel.queue_declare(queue='fluids') # if queue does not exist, create it
         channel2.queue_declare(queue='velocities') # if queue does not exist, create it
-        channel3.queue_declare(queue='coordinates') # if queue does not exist, create it
         channel4.queue_declare(queue='lights_status') # if queue does not exist, create it
-        channel5.queue_declare(queue='motor_status') # if queue does not exist, create it
+        channel5.queue_declare(queue='car_status') # if queue does not exist, create it
         channel6.queue_declare(queue='tires_status') # if queue does not exist, create it
 
         while True:
@@ -122,13 +121,9 @@ class velocity_sensor:
 
 
             #Preciso de ligar o carro
-            message = {'id': self.id, 'timestamp': time.time(), 'motor_status': "ON", 'motor_temperature': self.current_engine_temperature}
-            channel5.basic_publish(exchange='', routing_key='motor_status', body=json.dumps(message))
-            logger.debug(message)
             self.current_coordinates = self.current_trip.pop(0)
-            #Preciso de mandar as coordenadas iniciais
-            message = {'id': self.id, 'timestamp': time.time(), 'latitude': self.current_coordinates[0], 'longitude': self.current_coordinates[1]}
-            channel3.basic_publish(exchange='', routing_key='coordinates', body=json.dumps(message))
+            message = {'id': self.id, 'timestamp': time.time(), 'motor_status': "ON", 'motor_temperature': self.current_engine_temperature, 'latitude': self.current_coordinates[0], 'longitude': self.current_coordinates[1]}
+            channel5.basic_publish(exchange='', routing_key='car_status', body=json.dumps(message))
             logger.debug(message)
             #Mandar também o estado dos pneus e das luzes
             message = {'id': self.id, 'timestamp': time.time(), 'tires_pressure': self.current_tires_pressure, 'tires_temperature': self.current_tires_temperature}
@@ -172,10 +167,16 @@ class velocity_sensor:
                     
                     
                     if self.engine_problem and self.current_engine_temperature > 105:
+                        message = {'id': self.id, 'timestamp': time.time(), 'motor_status': "OFF", 'motor_temperature': self.current_engine_temperature, 'latitude': self.current_coordinates[0], 'longitude': self.current_coordinates[1]}
+                        channel5.basic_publish(exchange='', routing_key='car_status', body=json.dumps(message))
+                        logger.debug(message)
                         break
 
 
                 if self.current_fuel <= 0:
+                    message = {'id': self.id, 'timestamp': time.time(), 'motor_status': "OFF", 'motor_temperature': self.current_engine_temperature, 'latitude': self.current_coordinates[0], 'longitude': self.current_coordinates[1]}
+                    channel5.basic_publish(exchange='', routing_key='car_status', body=json.dumps(message))
+                    logger.debug(message)
                     break
                     #Espero um tempo random e volto a gerar dados, abastecendo
 
@@ -227,11 +228,8 @@ class velocity_sensor:
 
             #Acabei a minha viagem, vou esperar um coto antes de voltar a fazer outra
             self.current_trip = []
-            message = {'id': self.id, 'timestamp': time.time(), 'latitude': self.current_coordinates[0], 'longitude': self.current_coordinates[1]}
-            channel3.basic_publish(exchange='', routing_key='coordinates', body=json.dumps(message))
-            logger.debug(message)
-            message = {'id': self.id, 'timestamp': time.time(), 'motor_status': "OFF", 'motor_temperature': self.current_engine_temperature}
-            channel5.basic_publish(exchange='', routing_key='motor_status', body=json.dumps(message))
+            message = {'id': self.id, 'timestamp': time.time(), 'motor_status': "OFF", 'motor_temperature': self.current_engine_temperature, 'latitude': self.current_coordinates[0], 'longitude': self.current_coordinates[1]}
+            channel5.basic_publish(exchange='', routing_key='car_status', body=json.dumps(message))
             logger.debug(message)
 
             if self.time_between_trips > 0:
