@@ -69,11 +69,17 @@ class velocity_sensor:
             if self.current_fuel == 0:
 
                 #Tenho de abastecer e espero que alguem me traga o combustivel
-                time.sleep(5*60/self.time_speed)
+                if self.time_speed > 0:
+                    time.sleep(5*60/self.time_speed)
+                else:
+                    time.sleep(5*60)
 
                 randfuel = random.choice([i for i in range(20)], p=[i for i in range(20)])
                 self.current_fuel += randfuel
-                time.sleep(30/self.time_speed)  #Abastecendo
+                if self.time_speed > 0:
+                    time.sleep(30/self.time_speed)  #Abastecendo
+                else:
+                    time.sleep(30)
 
             elif self.current_fuel < 100:
 
@@ -81,23 +87,33 @@ class velocity_sensor:
                 somatorio = sum([i for i in range(100)])
                 randnumber = numpy.random.choice([i for i in reversed(range(100))], p=[i/somatorio for i in range(100)])
 
+
                 if randnumber > self.current_fuel: #Vou abastecer
                     
                     somatorio = sum([i for i in range(100-int(self.current_fuel))])
                     randfuel = numpy.random.choice([i for i in range(100-int(self.current_fuel))], p=[i/somatorio for i in range(100-int(self.current_fuel))])
                     self.current_fuel += randfuel
-                    time.sleep(30/self.time_speed)  #Abastecendo
+                    if self.time_speed > 0:
+                        time.sleep(30/self.time_speed)  #Abastecendo
+                    else:
+                        time.sleep(30)
 
             
             if self.engine_problem:
                 #Tenho de esperar o carro esfriar e que alguém o arranje
-                time.sleep(10*60/self.time_speed)
+                if self.time_speed > 0:
+                    time.sleep(10*60/self.time_speed)
+                else:
+                    time.sleep(10*60)
                 self.engine_problem = False
                 self.current_engine_temperature = 70
 
             if self.current_lights == "DEAD":
                 #Tenho de esperar o carro esfriar e que alguém o arranje
-                time.sleep(1*60/self.time_speed)
+                if self.time_speed > 0:
+                    time.sleep(1*60/self.time_speed)
+                else:
+                    time.sleep(1*60)
                 self.current_lights = "OFF"
                 # print("Enviar mensagem de que as luzes estão a funcionar")
                 message = {'id': self.id, 'timestamp': time.time(), 'lights': self.current_lights}
@@ -218,9 +234,16 @@ class velocity_sensor:
             channel5.basic_publish(exchange='', routing_key='motor_status', body=json.dumps(message))
             logger.debug(message)
 
-            somatorio = sum([i for i in range(self.time_speed)])
-            randnumber = numpy.random.choice([i for i in range(self.time_speed)], p=[i/somatorio for i in range(self.time_speed)])
-            time.sleep(randnumber/ self.time_speed)    #Aguardar time_speed antes de voltar a fazer uma viagem
+            somatorio = sum([i for i in range(1, self.time_between_trips + 1)])
+            if somatorio > 0:
+                randnumber = numpy.random.choice([i for i in range(self.time_between_trips)], p=[i/somatorio for i in range(self.time_between_trips)])
+            else:
+                randnumber = 0
+
+            if self.time_speed > 0:
+                time.sleep(randnumber/ self.time_speed)    #Aguardar time_speed antes de voltar a fazer uma viagem
+            else:
+                time.sleep(randnumber)
 
 
 
@@ -236,6 +259,9 @@ if __name__ == '__main__':
     args = parse.parse_args()
     try:
         v0 = velocity_sensor(id=args.id, current_velocity=0, current_fuel=args.fuel, current_water=args.water, current_oil=args.oil, time_between_trips=args.time_trips, time_speed=args.time_speed)#, message_speed=args.time_message)
+
+        if not os.path.exists("logs/"):
+            os.makedirs("logs/")
 
         # Create and configure logger
         today = date.today()
