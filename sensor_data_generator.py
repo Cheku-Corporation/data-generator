@@ -164,8 +164,6 @@ class velocity_sensor:
                     #Espero um tempo random e volto a gerar dados, abastecendo
 
                 
-                print("Coordenadas atuais:", self.current_coordinates)
-                print("Proxima coordenada:", self.current_trip[0])
                 distancia = distance(self.current_coordinates[0], self.current_coordinates[1], self.current_trip[0][0], self.current_trip[0][1])  #m/s = #distancia/1000km*3600 = km/h
                 velocidade_media = distancia/1000*(3600)  #Velocidade média em km/h naquele segundo
                 aceleracao = (velocidade_media-self.current_velocity)/5 #5 pois é metade de 1 segundo que seriam 10 iterações, ou seja, 5 segundos para igualar e 5 segundos para afastar de forma a que a velocidade média seja coerente
