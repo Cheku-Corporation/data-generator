@@ -47,7 +47,6 @@ class velocity_sensor:
         
         channel = connection.channel()
         channel2 = connection.channel()
-        channel3 = connection.channel()
         channel4 = connection.channel()
         channel5 = connection.channel()
         channel6 = connection.channel()
@@ -121,17 +120,23 @@ class velocity_sensor:
 
 
             #Preciso de ligar o carro
+            tempo = time.time()
             self.current_coordinates = self.current_trip.pop(0)
-            message = {'id': self.id, 'timestamp': time.time(), 'motor_status': "ON", 'motor_temperature': self.current_engine_temperature, 'latitude': self.current_coordinates[0], 'longitude': self.current_coordinates[1]}
+            message = {'id': self.id, 'timestamp': tempo, 'motor_status': "ON", 'motor_temperature': self.current_engine_temperature, 'latitude': self.current_coordinates[0], 'longitude': self.current_coordinates[1]}
             channel5.basic_publish(exchange='', routing_key='car_status', body=json.dumps(message))
             logger.debug(message)
+            time.sleep(1)
             #Mandar também o estado dos pneus e das luzes
-            message = {'id': self.id, 'timestamp': time.time(), 'tires_pressure': self.current_tires_pressure, 'tires_temperature': self.current_tires_temperature}
+            message = {'id': self.id, 'timestamp': tempo, 'tires_pressure': self.current_tires_pressure, 'tires_temperature': self.current_tires_temperature}
             channel6.basic_publish(exchange='', routing_key='tires_status', body=json.dumps(message))
             logger.debug(message)
-            message = {'id': self.id, 'timestamp': time.time(), 'lights': self.current_lights}
+            message = {'id': self.id, 'timestamp': tempo, 'lights': self.current_lights}
             channel4.basic_publish(exchange='', routing_key='lights_status', body=json.dumps(message))
             logger.debug(message)
+            message = {'id': self.id, 'timestamp': tempo, 'current_fuel': round(self.current_fuel/100, 2), 'current_water': round(self.current_water/100,2), 'current_oil': round(self.current_oil/100,2)}
+            channel.basic_publish(exchange='', routing_key='fluids', body=json.dumps(message))
+            logger.debug(message)
+
             
 
             i = 0
@@ -140,12 +145,27 @@ class velocity_sensor:
 
 
                 #Enviar a temperatura dos pneus a cada 30 segundos
-                if i % 30 == 0:
+                if i % 5 == 0:
+                    
+                    if i%30 == 0:
+                        #Avaliar o estado das luzes
+                        if self.current_lights != "DEAD":
+                            if random.uniform(0, 1) > 0.90: #Gerar novo estado
+                                self.current_lights = numpy.random.choice(["OFF", "AVG", "MAX", "MIN", "DEAD"], p=[0.53, 0.37, 0.05, 0.03, 0.02])
+                        
+                        #Enviar a temperatura dos pneus
+                        self.current_tires_pressure = tires_pressure(self.current_tires_pressure, self.current_velocity)
+                        self.current_tires_temperature = tires_temperature(self.current_tires_temperature, self.current_velocity)
 
-                    #Estado das luzes
-                    if self.current_lights != "DEAD":
-                        if random.uniform(0, 1) > 0.90: #Gerar novo estado
-                            self.current_lights = numpy.random.choice(["OFF", "AVG", "MAX", "MIN", "DEAD"], p=[0.53, 0.37, 0.05, 0.03, 0.02])
+                        #Enviar a temperatura do motor
+                        self.current_engine_temperature, self.engine_problem = engine_temperature(self.current_engine_temperature, self.current_rpm, self.engine_problem)
+
+
+                    # print("Pressao: ", self.current_tires_pressure, "Pneus: ", self.current_tires_temperature, "Motor: ", self.current_engine_temperature)
+                    message = {'id': self.id, 'timestamp': time.time(), 'tires_pressure': self.current_tires_pressure, 'tires_temperature': self.current_tires_temperature}
+                    channel6.basic_publish(exchange='', routing_key='tires_status', body=json.dumps(message))
+                    logger.debug(message)
+
                     #Enviar a mensagem
                     message = {'id': self.id, 'timestamp': time.time(), 'lights': self.current_lights}
                     channel4.basic_publish(exchange='', routing_key='lights_status', body=json.dumps(message))
@@ -153,28 +173,43 @@ class velocity_sensor:
 
 
 
-                    #Enviar a temperatura dos pneus
-                    self.current_tires_pressure = tires_pressure(self.current_tires_pressure, self.current_velocity)
-                    self.current_tires_temperature = tires_temperature(self.current_tires_temperature, self.current_velocity)
-
-                    #Enviar a temperatura do motor
-                    self.current_engine_temperature, self.engine_problem = engine_temperature(self.current_engine_temperature, self.current_rpm, self.engine_problem)
-
-                    # print("Pressao: ", self.current_tires_pressure, "Pneus: ", self.current_tires_temperature, "Motor: ", self.current_engine_temperature)
-                    message = {'id': self.id, 'timestamp': time.time(), 'tires_pressure': self.current_tires_pressure, 'tires_temperature': self.current_tires_temperature}
-                    channel6.basic_publish(exchange='', routing_key='tires_status', body=json.dumps(message))
-                    logger.debug(message)
+                    
                     
                     
                     if self.engine_problem and self.current_engine_temperature > 105:
-                        message = {'id': self.id, 'timestamp': time.time(), 'motor_status': "OFF", 'motor_temperature': self.current_engine_temperature, 'latitude': self.current_coordinates[0], 'longitude': self.current_coordinates[1]}
+                        tempo = time.time()
+                        #Mandar também o estado dos pneus e das luzes
+                        message = {'id': self.id, 'timestamp': tempo, 'tires_pressure': self.current_tires_pressure, 'tires_temperature': self.current_tires_temperature}
+                        channel6.basic_publish(exchange='', routing_key='tires_status', body=json.dumps(message))
+                        logger.debug(message)
+                        message = {'id': self.id, 'timestamp': tempo, 'lights': self.current_lights}
+                        channel4.basic_publish(exchange='', routing_key='lights_status', body=json.dumps(message))
+                        logger.debug(message)
+                        message = {'id': self.id, 'timestamp': tempo, 'current_fuel': round(self.current_fuel/100, 2), 'current_water': round(self.current_water/100,2), 'current_oil': round(self.current_oil/100,2)}
+                        channel.basic_publish(exchange='', routing_key='fluids', body=json.dumps(message))
+                        logger.debug(message)
+                        time.sleep(1)
+                        message = {'id': self.id, 'timestamp': tempo, 'motor_status': "OFF", 'motor_temperature': self.current_engine_temperature, 'latitude': self.current_coordinates[0], 'longitude': self.current_coordinates[1]}
                         channel5.basic_publish(exchange='', routing_key='car_status', body=json.dumps(message))
                         logger.debug(message)
+                        
                         break
 
 
                 if self.current_fuel <= 0:
-                    message = {'id': self.id, 'timestamp': time.time(), 'motor_status': "OFF", 'motor_temperature': self.current_engine_temperature, 'latitude': self.current_coordinates[0], 'longitude': self.current_coordinates[1]}
+                    tempo = time.time()
+                    #Mandar também o estado dos pneus e das luzes
+                    message = {'id': self.id, 'timestamp': tempo, 'tires_pressure': self.current_tires_pressure, 'tires_temperature': self.current_tires_temperature}
+                    channel6.basic_publish(exchange='', routing_key='tires_status', body=json.dumps(message))
+                    logger.debug(message)
+                    message = {'id': self.id, 'timestamp': tempo, 'lights': self.current_lights}
+                    channel4.basic_publish(exchange='', routing_key='lights_status', body=json.dumps(message))
+                    logger.debug(message)
+                    message = {'id': self.id, 'timestamp': tempo, 'current_fuel': round(self.current_fuel/100, 2), 'current_water': round(self.current_water/100,2), 'current_oil': round(self.current_oil/100,2)}
+                    channel.basic_publish(exchange='', routing_key='fluids', body=json.dumps(message))
+                    logger.debug(message)
+                    time.sleep(1)
+                    message = {'id': self.id, 'timestamp': tempo, 'motor_status': "OFF", 'motor_temperature': self.current_engine_temperature, 'latitude': self.current_coordinates[0], 'longitude': self.current_coordinates[1]}
                     channel5.basic_publish(exchange='', routing_key='car_status', body=json.dumps(message))
                     logger.debug(message)
                     break
@@ -228,7 +263,19 @@ class velocity_sensor:
 
             #Acabei a minha viagem, vou esperar um coto antes de voltar a fazer outra
             self.current_trip = []
-            message = {'id': self.id, 'timestamp': time.time(), 'motor_status': "OFF", 'motor_temperature': self.current_engine_temperature, 'latitude': self.current_coordinates[0], 'longitude': self.current_coordinates[1]}
+            tempo = time.time()
+            #Mandar também o estado dos pneus e das luzes
+            message = {'id': self.id, 'timestamp': tempo, 'tires_pressure': self.current_tires_pressure, 'tires_temperature': self.current_tires_temperature}
+            channel6.basic_publish(exchange='', routing_key='tires_status', body=json.dumps(message))
+            logger.debug(message)
+            message = {'id': self.id, 'timestamp': tempo, 'lights': self.current_lights}
+            channel4.basic_publish(exchange='', routing_key='lights_status', body=json.dumps(message))
+            logger.debug(message)
+            message = {'id': self.id, 'timestamp': tempo, 'current_fuel': round(self.current_fuel/100, 2), 'current_water': round(self.current_water/100,2), 'current_oil': round(self.current_oil/100,2)}
+            channel.basic_publish(exchange='', routing_key='fluids', body=json.dumps(message))
+            logger.debug(message)
+            time.sleep(1)
+            message = {'id': self.id, 'timestamp': tempo, 'motor_status': "OFF", 'motor_temperature': self.current_engine_temperature, 'latitude': self.current_coordinates[0], 'longitude': self.current_coordinates[1]}
             channel5.basic_publish(exchange='', routing_key='car_status', body=json.dumps(message))
             logger.debug(message)
 
