@@ -14,10 +14,149 @@ from termometer_generator import *
 import logging
 from datetime import date
 
+#Melhorar a qualidade do codigo
 
-#Melhorar a probablididade de reabastecimento de todos os fluidos
 #Melhorar as mudanças de gear
 #ReadMe bonitinho
+
+
+def check_and_fix_fluids(self):
+    if self.current_fuel == 0:
+
+        #Tenho de abastecer e espero que alguem me traga o combustivel
+        if self.time_speed > 0:
+            time.sleep(5*60/self.time_speed)
+        else:
+            time.sleep(5*60)
+
+        randfuel = random.choice([i for i in range(20)], p=[i for i in range(20)])
+        self.current_fuel += randfuel
+        if self.time_speed > 0:
+            time.sleep(30/self.time_speed)  #Abastecendo
+        else:
+            time.sleep(30)
+
+    elif self.current_fuel < 100:
+
+        #Probabilidade de colocar combustivel
+        somatorio = sum([i for i in range(100)])
+        randnumber = numpy.random.choice([i for i in reversed(range(100))], p=[i/somatorio for i in range(100)])
+
+
+        if randnumber > self.current_fuel: #Vou abastecer
+            
+            somatorio = sum([i for i in range(100-int(self.current_fuel))])
+            randfuel = numpy.random.choice([i for i in range(100-int(self.current_fuel))], p=[i/somatorio for i in range(100-int(self.current_fuel))])
+            self.current_fuel += randfuel
+            if self.time_speed > 0:
+                time.sleep(30/self.time_speed)  #Abastecendo
+            else:
+                time.sleep(30)
+
+    
+    #Falta a probabilidade de reabastecimento de agua e oleo
+    if self.current_water < 100:
+            
+        #Probabilidade de colocar agua
+        somatorio = sum([i*2 for i in range(100)])
+        randnumber = numpy.random.choice([i for i in reversed(range(100))], p=[i*2/somatorio for i in range(100)])
+        if randnumber > self.current_water:
+                
+            somatorio = sum([i for i in range(100-int(self.current_water))])
+            randwater = numpy.random.choice([i for i in range(100-int(self.current_water))], p=[i/somatorio for i in range(100-int(self.current_water))])
+            self.current_water += randwater
+            if self.time_speed > 0:
+                time.sleep(30/self.time_speed)
+            else:
+                time.sleep(30)
+
+    if self.current_oil <= 80:
+        #Tenho de adicionar oleo
+        if self.time_speed > 0:
+            time.sleep(5*60/self.time_speed)
+        else:
+            time.sleep(5*60)
+
+        randoil = random.choice([i for i in range(20)], p=[i for i in range(20)])
+        self.current_oil += randoil
+        if self.time_speed > 0:
+            time.sleep(30/self.time_speed)
+
+    elif self.current_oil < 100:
+                
+        #Probabilidade de colocar oleo
+        somatorio = sum([i*2 for i in range(100)])
+        randnumber = numpy.random.choice([i for i in reversed(range(100))], p=[i*2/somatorio for i in range(100)])
+
+        if randnumber > self.current_oil:
+                
+            somatorio = sum([i for i in range(100-int(self.current_oil))])
+            randoil = numpy.random.choice([i for i in range(100-int(self.current_oil))], p=[i/somatorio for i in range(100-int(self.current_oil))])
+            self.current_oil += randoil
+            if self.time_speed > 0:
+                time.sleep(30/self.time_speed)
+            else:
+                time.sleep(30)
+
+
+def car_start(self, logger, channel, channel4, channel5, channel6):
+    tempo = time.time()
+    self.current_coordinates = self.current_trip.pop(0)
+    message = {'id': self.id, 'timestamp': tempo, 'motor_status': "ON", 'motor_temperature': self.current_engine_temperature, 'latitude': self.current_coordinates[0], 'longitude': self.current_coordinates[1]}
+    channel5.basic_publish(exchange='', routing_key='car_status', body=json.dumps(message))
+    logger.debug(message)
+    time.sleep(1)
+    #Mandar também o estado dos pneus e das luzes
+    message = {'id': self.id, 'timestamp': tempo, 'tires_pressure': self.current_tires_pressure, 'tires_temperature': self.current_tires_temperature}
+    channel6.basic_publish(exchange='', routing_key='tires_status', body=json.dumps(message))
+    logger.debug(message)
+    message = {'id': self.id, 'timestamp': tempo, 'lights': self.current_lights}
+    channel4.basic_publish(exchange='', routing_key='lights_status', body=json.dumps(message))
+    logger.debug(message)
+    message = {'id': self.id, 'timestamp': tempo, 'current_fuel': round(self.current_fuel/100, 4), 'current_water': round(self.current_water/100, 4), 'current_oil': round(self.current_oil/100, 4)}
+    channel.basic_publish(exchange='', routing_key='fluids', body=json.dumps(message))
+    logger.debug(message)
+
+
+def stop_car(self, logger, channel, channel4, channel5, channel6):
+    tempo = time.time()
+    message = {'id': self.id, 'timestamp': tempo, 'tires_pressure': self.current_tires_pressure, 'tires_temperature': self.current_tires_temperature}
+    channel6.basic_publish(exchange='', routing_key='tires_status', body=json.dumps(message))
+    logger.debug(message)
+    message = {'id': self.id, 'timestamp': tempo, 'lights': self.current_lights}
+    channel4.basic_publish(exchange='', routing_key='lights_status', body=json.dumps(message))
+    logger.debug(message)
+    message = {'id': self.id, 'timestamp': tempo, 'current_fuel': round(self.current_fuel/100, 4), 'current_water': round(self.current_water/100, 4), 'current_oil': round(self.current_oil/100, 4)}
+    channel.basic_publish(exchange='', routing_key='fluids', body=json.dumps(message))
+    logger.debug(message)
+    time.sleep(1)
+    message = {'id': self.id, 'timestamp': tempo, 'motor_status': "OFF", 'motor_temperature': self.current_engine_temperature, 'latitude': self.current_coordinates[0], 'longitude': self.current_coordinates[1]}
+    channel5.basic_publish(exchange='', routing_key='car_status', body=json.dumps(message))
+    logger.debug(message)
+
+
+
+def fix_problems(self, logger, channel4):
+    if self.engine_problem:
+        #Tenho de esperar o carro esfriar e que alguém o arranje
+        if self.time_speed > 0:
+            time.sleep(10*60/self.time_speed)
+        else:
+            time.sleep(10*60)
+        self.engine_problem = False
+        self.current_engine_temperature = 70
+
+    if self.current_lights == "DEAD":
+        #Tenho de esperar o carro esfriar e que alguém o arranje
+        if self.time_speed > 0:
+            time.sleep(1*60/self.time_speed)
+        else:
+            time.sleep(1*60)
+        self.current_lights = "OFF"
+        # print("Enviar mensagem de que as luzes estão a funcionar")
+        message = {'id': self.id, 'timestamp': time.time(), 'lights': self.current_lights}
+        channel4.basic_publish(exchange='', routing_key='lights_status', body=json.dumps(message))
+        logger.debug(message)
 
 
 
@@ -44,8 +183,6 @@ class velocity_sensor:
 
         self.time_between_trips = time_between_trips
         self.time_speed = time_speed
-        # self.message_speed = message_speed
-
 
 
     def run(self):
@@ -68,130 +205,17 @@ class velocity_sensor:
 
         while True:
             if self.current_trip == []:
-
                 #Preciso de gerar uma nova viagem
                 self.current_trip = coordinates_generator.generate_random_trip()
 
+            #Verificar se o carro tem fluidos suficientes para ligar
+            check_and_fix_fluids(self)
 
-            if self.current_fuel == 0:
-
-                #Tenho de abastecer e espero que alguem me traga o combustivel
-                if self.time_speed > 0:
-                    time.sleep(5*60/self.time_speed)
-                else:
-                    time.sleep(5*60)
-
-                randfuel = random.choice([i for i in range(20)], p=[i for i in range(20)])
-                self.current_fuel += randfuel
-                if self.time_speed > 0:
-                    time.sleep(30/self.time_speed)  #Abastecendo
-                else:
-                    time.sleep(30)
-
-            elif self.current_fuel < 100:
-
-                #Probabilidade de colocar combustivel
-                somatorio = sum([i for i in range(100)])
-                randnumber = numpy.random.choice([i for i in reversed(range(100))], p=[i/somatorio for i in range(100)])
-
-
-                if randnumber > self.current_fuel: #Vou abastecer
-                    
-                    somatorio = sum([i for i in range(100-int(self.current_fuel))])
-                    randfuel = numpy.random.choice([i for i in range(100-int(self.current_fuel))], p=[i/somatorio for i in range(100-int(self.current_fuel))])
-                    self.current_fuel += randfuel
-                    if self.time_speed > 0:
-                        time.sleep(30/self.time_speed)  #Abastecendo
-                    else:
-                        time.sleep(30)
-
-            
-            #Falta a probabilidade de reabastecimento de agua e oleo
-            if self.current_water < 100:
-                    
-                #Probabilidade de colocar agua
-                somatorio = sum([i for i in range(100)])
-                randnumber = numpy.random.choice([i for i in reversed(range(100))], p=[i/somatorio for i in range(100)])
-                if randnumber > self.current_water:
-                        
-                    somatorio = sum([i for i in range(100-int(self.current_water))])
-                    randwater = numpy.random.choice([i for i in range(100-int(self.current_water))], p=[i/somatorio for i in range(100-int(self.current_water))])
-                    self.current_water += randwater
-                    if self.time_speed > 0:
-                        time.sleep(30/self.time_speed)
-                    else:
-                        time.sleep(30)
-
-            if self.current_oil <= 80:
-                #Tenho de adicionar oleo
-                if self.time_speed > 0:
-                    time.sleep(5*60/self.time_speed)
-                else:
-                    time.sleep(5*60)
-
-                randoil = random.choice([i for i in range(20)], p=[i for i in range(20)])
-                self.current_oil += randoil
-                if self.time_speed > 0:
-                    time.sleep(30/self.time_speed)
-
-            elif self.current_oil < 100:
-                        
-                #Probabilidade de colocar oleo
-                somatorio = sum([i for i in range(100)])
-                randnumber = numpy.random.choice([i for i in reversed(range(100))], p=[i/somatorio for i in range(100)])
-
-                if randnumber > self.current_oil:
-                        
-                    somatorio = sum([i for i in range(100-int(self.current_oil))])
-                    randoil = numpy.random.choice([i for i in range(100-int(self.current_oil))], p=[i/somatorio for i in range(100-int(self.current_oil))])
-                    self.current_oil += randoil
-                    if self.time_speed > 0:
-                        time.sleep(30/self.time_speed)
-                    else:
-                        time.sleep(30)
-
-
-            
-            if self.engine_problem:
-                #Tenho de esperar o carro esfriar e que alguém o arranje
-                if self.time_speed > 0:
-                    time.sleep(10*60/self.time_speed)
-                else:
-                    time.sleep(10*60)
-                self.engine_problem = False
-                self.current_engine_temperature = 70
-
-            if self.current_lights == "DEAD":
-                #Tenho de esperar o carro esfriar e que alguém o arranje
-                if self.time_speed > 0:
-                    time.sleep(1*60/self.time_speed)
-                else:
-                    time.sleep(1*60)
-                self.current_lights = "OFF"
-                # print("Enviar mensagem de que as luzes estão a funcionar")
-                message = {'id': self.id, 'timestamp': time.time(), 'lights': self.current_lights}
-                channel4.basic_publish(exchange='', routing_key='lights_status', body=json.dumps(message))
-                logger.debug(message)
-
+            #Verificar se o carro tem problemas de motor ou de luzes
+            fix_problems(self, logger, channel4)
 
             #Preciso de ligar o carro
-            tempo = time.time()
-            self.current_coordinates = self.current_trip.pop(0)
-            message = {'id': self.id, 'timestamp': tempo, 'motor_status': "ON", 'motor_temperature': self.current_engine_temperature, 'latitude': self.current_coordinates[0], 'longitude': self.current_coordinates[1]}
-            channel5.basic_publish(exchange='', routing_key='car_status', body=json.dumps(message))
-            logger.debug(message)
-            time.sleep(1)
-            #Mandar também o estado dos pneus e das luzes
-            message = {'id': self.id, 'timestamp': tempo, 'tires_pressure': self.current_tires_pressure, 'tires_temperature': self.current_tires_temperature}
-            channel6.basic_publish(exchange='', routing_key='tires_status', body=json.dumps(message))
-            logger.debug(message)
-            message = {'id': self.id, 'timestamp': tempo, 'lights': self.current_lights}
-            channel4.basic_publish(exchange='', routing_key='lights_status', body=json.dumps(message))
-            logger.debug(message)
-            message = {'id': self.id, 'timestamp': tempo, 'current_fuel': round(self.current_fuel/100, 4), 'current_water': round(self.current_water/100, 4), 'current_oil': round(self.current_oil/100, 4)}
-            channel.basic_publish(exchange='', routing_key='fluids', body=json.dumps(message))
-            logger.debug(message)
-
+            car_start(self, logger, channel, channel4, channel5, channel6)
             
 
             i = 0
@@ -225,50 +249,16 @@ class velocity_sensor:
                     message = {'id': self.id, 'timestamp': time.time(), 'lights': self.current_lights}
                     channel4.basic_publish(exchange='', routing_key='lights_status', body=json.dumps(message))
                     logger.debug(message)
-
-
-
-                    
                     
                     
                     if self.engine_problem and self.current_engine_temperature > 105:
-                        tempo = time.time()
-                        #Mandar também o estado dos pneus e das luzes
-                        message = {'id': self.id, 'timestamp': tempo, 'tires_pressure': self.current_tires_pressure, 'tires_temperature': self.current_tires_temperature}
-                        channel6.basic_publish(exchange='', routing_key='tires_status', body=json.dumps(message))
-                        logger.debug(message)
-                        message = {'id': self.id, 'timestamp': tempo, 'lights': self.current_lights}
-                        channel4.basic_publish(exchange='', routing_key='lights_status', body=json.dumps(message))
-                        logger.debug(message)
-                        message = {'id': self.id, 'timestamp': tempo, 'current_fuel': round(self.current_fuel/100, 4), 'current_water': round(self.current_water/100, 4), 'current_oil': round(self.current_oil/100, 4)}
-                        channel.basic_publish(exchange='', routing_key='fluids', body=json.dumps(message))
-                        logger.debug(message)
-                        time.sleep(1)
-                        message = {'id': self.id, 'timestamp': tempo, 'motor_status': "OFF", 'motor_temperature': self.current_engine_temperature, 'latitude': self.current_coordinates[0], 'longitude': self.current_coordinates[1]}
-                        channel5.basic_publish(exchange='', routing_key='car_status', body=json.dumps(message))
-                        logger.debug(message)
-                        
+                        stop_car(self, logger, channel, channel4, channel5, channel6)
                         break
 
 
-                if self.current_fuel <= 0 or self.current_water <= 0 or self.current_oil <= 80:
-                    tempo = time.time()
-                    #Mandar também o estado dos pneus e das luzes
-                    message = {'id': self.id, 'timestamp': tempo, 'tires_pressure': self.current_tires_pressure, 'tires_temperature': self.current_tires_temperature}
-                    channel6.basic_publish(exchange='', routing_key='tires_status', body=json.dumps(message))
-                    logger.debug(message)
-                    message = {'id': self.id, 'timestamp': tempo, 'lights': self.current_lights}
-                    channel4.basic_publish(exchange='', routing_key='lights_status', body=json.dumps(message))
-                    logger.debug(message)
-                    message = {'id': self.id, 'timestamp': tempo, 'current_fuel': round(self.current_fuel/100, 4), 'current_water': round(self.current_water/100, 4), 'current_oil': round(self.current_oil/100, 4)}
-                    channel.basic_publish(exchange='', routing_key='fluids', body=json.dumps(message))
-                    logger.debug(message)
-                    time.sleep(1)
-                    message = {'id': self.id, 'timestamp': tempo, 'motor_status': "OFF", 'motor_temperature': self.current_engine_temperature, 'latitude': self.current_coordinates[0], 'longitude': self.current_coordinates[1]}
-                    channel5.basic_publish(exchange='', routing_key='car_status', body=json.dumps(message))
-                    logger.debug(message)
+                if self.current_fuel <= 0 or self.current_oil <= 80:
+                    stop_car(self, logger, channel, channel4, channel5, channel6)
                     break
-                    #Espero um tempo random e volto a gerar dados, abastecendo
 
                 
                 distancia = distance(self.current_coordinates[0], self.current_coordinates[1], self.current_trip[0][0], self.current_trip[0][1])  #m/s = #distancia/1000km*3600 = km/h
@@ -291,14 +281,17 @@ class velocity_sensor:
                     if j == 0:
 
                         if round(self.current_fuel, 4) == 20:
+                            #Devido às Notificações
                             self.current_fuel = 19.9999
                         self.current_fuel = generate_fuel(self.current_fuel, self.current_gear, self.current_rpm)
 
                         if round(self.current_water, 4) == 20:
+                            #Devido às Notificações
                             self.current_water = 19.9999
                         self.current_water = generate_water(self.current_water)
                         
                         if round(self.current_oil, 4) == 20:
+                            #Devido às Notificações
                             self.current_oil = 19.9999
                         self.current_oil = generate_oil(self.current_oil)
 
@@ -311,9 +304,9 @@ class velocity_sensor:
                     message = {'id': self.id, 'timestamp': time.time(), 'velocity': round(self.current_velocity,2), 'gear': round(self.current_gear,2), 'rpm': round(self.current_rpm,2)}
                     channel2.basic_publish(exchange='', routing_key='velocities', body=json.dumps(message))
                     logger.debug(message)
+
+                    #Await to send next message
                     time.sleep(0.1)
-                    
-                
 
                     
                 self.current_coordinates = self.current_trip.pop(0)
@@ -323,27 +316,10 @@ class velocity_sensor:
             
 
             #Acabei a minha viagem, vou esperar um coto antes de voltar a fazer outra
-            self.current_trip = []
-            tempo = time.time()
-            #Mandar também o estado dos pneus e das luzes
-            message = {'id': self.id, 'timestamp': tempo, 'tires_pressure': self.current_tires_pressure, 'tires_temperature': self.current_tires_temperature}
-            channel6.basic_publish(exchange='', routing_key='tires_status', body=json.dumps(message))
-            logger.debug(message)
-            message = {'id': self.id, 'timestamp': tempo, 'lights': self.current_lights}
-            channel4.basic_publish(exchange='', routing_key='lights_status', body=json.dumps(message))
-            logger.debug(message)
-            message = {'id': self.id, 'timestamp': tempo, 'current_fuel': round(self.current_fuel/100, 4), 'current_water': round(self.current_water/100, 4), 'current_oil': round(self.current_oil/100, 4)}
-            channel.basic_publish(exchange='', routing_key='fluids', body=json.dumps(message))
-            logger.debug(message)
-            time.sleep(1)
-            message = {'id': self.id, 'timestamp': tempo, 'motor_status': "OFF", 'motor_temperature': self.current_engine_temperature, 'latitude': self.current_coordinates[0], 'longitude': self.current_coordinates[1]}
-            channel5.basic_publish(exchange='', routing_key='car_status', body=json.dumps(message))
-            logger.debug(message)
+            stop_car(self, logger, channel, channel4, channel5, channel6)
 
             if self.time_between_trips > 0:
                 time.sleep(self.time_between_trips)    #Aguardar time_speed antes de voltar a fazer uma viagem
-            else:
-                time.sleep(0)
 
 
 
