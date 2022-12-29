@@ -15,6 +15,14 @@ import logging
 from datetime import date
 
 
+#Coordenadas de 1 em 1 segundo
+#Probabilidade de reabastecimento de todos os fluidos
+#Apenas mandar os fluidos 1 vez a cada alteração
+#ReadMe bonitinho
+
+
+
+
 class velocity_sensor:
     def __init__(self, id=0, current_velocity=0.0, current_fuel = 100, current_water = 100, current_oil = 100, current_tires_temperature = 40, current_engine_temperature = 70, time_between_trips = 30*60, time_speed = 1):#, message_speed = 1):
         self.id = id    #Vehicle ID
@@ -47,12 +55,14 @@ class velocity_sensor:
         
         channel = connection.channel()
         channel2 = connection.channel()
+        channel3 = connection.channel()
         channel4 = connection.channel()
         channel5 = connection.channel()
         channel6 = connection.channel()
 
         channel.queue_declare(queue='fluids') # if queue does not exist, create it
         channel2.queue_declare(queue='velocities') # if queue does not exist, create it
+        channel3.queue_declare(queue='coordinates') # if queue does not exist, create it
         channel4.queue_declare(queue='lights_status') # if queue does not exist, create it
         channel5.queue_declare(queue='car_status') # if queue does not exist, create it
         channel6.queue_declare(queue='tires_status') # if queue does not exist, create it
@@ -133,7 +143,7 @@ class velocity_sensor:
             message = {'id': self.id, 'timestamp': tempo, 'lights': self.current_lights}
             channel4.basic_publish(exchange='', routing_key='lights_status', body=json.dumps(message))
             logger.debug(message)
-            message = {'id': self.id, 'timestamp': tempo, 'current_fuel': round(self.current_fuel/100, 2), 'current_water': round(self.current_water/100,2), 'current_oil': round(self.current_oil/100,2)}
+            message = {'id': self.id, 'timestamp': tempo, 'current_fuel': round(self.current_fuel/100, 4), 'current_water': round(self.current_water/100, 4), 'current_oil': round(self.current_oil/100, 4)}
             channel.basic_publish(exchange='', routing_key='fluids', body=json.dumps(message))
             logger.debug(message)
 
@@ -185,7 +195,7 @@ class velocity_sensor:
                         message = {'id': self.id, 'timestamp': tempo, 'lights': self.current_lights}
                         channel4.basic_publish(exchange='', routing_key='lights_status', body=json.dumps(message))
                         logger.debug(message)
-                        message = {'id': self.id, 'timestamp': tempo, 'current_fuel': round(self.current_fuel/100, 2), 'current_water': round(self.current_water/100,2), 'current_oil': round(self.current_oil/100,2)}
+                        message = {'id': self.id, 'timestamp': tempo, 'current_fuel': round(self.current_fuel/100, 4), 'current_water': round(self.current_water/100, 4), 'current_oil': round(self.current_oil/100, 4)}
                         channel.basic_publish(exchange='', routing_key='fluids', body=json.dumps(message))
                         logger.debug(message)
                         time.sleep(1)
@@ -205,7 +215,7 @@ class velocity_sensor:
                     message = {'id': self.id, 'timestamp': tempo, 'lights': self.current_lights}
                     channel4.basic_publish(exchange='', routing_key='lights_status', body=json.dumps(message))
                     logger.debug(message)
-                    message = {'id': self.id, 'timestamp': tempo, 'current_fuel': round(self.current_fuel/100, 2), 'current_water': round(self.current_water/100,2), 'current_oil': round(self.current_oil/100,2)}
+                    message = {'id': self.id, 'timestamp': tempo, 'current_fuel': round(self.current_fuel/100, 4), 'current_water': round(self.current_water/100, 4), 'current_oil': round(self.current_oil/100, 4)}
                     channel.basic_publish(exchange='', routing_key='fluids', body=json.dumps(message))
                     logger.debug(message)
                     time.sleep(1)
@@ -243,7 +253,7 @@ class velocity_sensor:
 
                         self.current_oil = generate_oil(self.current_oil)
 
-                        message = {'id': self.id, 'timestamp': time.time(), 'current_fuel': round(self.current_fuel/100, 2), 'current_water': round(self.current_water/100,2), 'current_oil': round(self.current_oil/100,2)}
+                        message = {'id': self.id, 'timestamp': time.time(), 'current_fuel': round(self.current_fuel/100, 4), 'current_water': round(self.current_water/100, 4), 'current_oil': round(self.current_oil/100, 4)}
                         channel.basic_publish(exchange='', routing_key='fluids', body=json.dumps(message))
                         logger.debug(message)
                         
@@ -258,7 +268,9 @@ class velocity_sensor:
 
                     
                 self.current_coordinates = self.current_trip.pop(0)
-                #Não é preciso enviar a cada segundo, apenas quando o carro liga e desliga, de forma a não ter demasiadas coordenadas na base de dados e a ser mais fácil gerar o percurso no mapa do front-end
+                message = {'id': self.id, 'timestamp': time.time(), 'latitude': self.current_coordinates[0], 'longitude': self.current_coordinates[1]}
+                channel3.basic_publish(exchange='', routing_key='coordinates', body=json.dumps(message))
+                logger.debug(message)
             
 
             #Acabei a minha viagem, vou esperar um coto antes de voltar a fazer outra
@@ -271,7 +283,7 @@ class velocity_sensor:
             message = {'id': self.id, 'timestamp': tempo, 'lights': self.current_lights}
             channel4.basic_publish(exchange='', routing_key='lights_status', body=json.dumps(message))
             logger.debug(message)
-            message = {'id': self.id, 'timestamp': tempo, 'current_fuel': round(self.current_fuel/100, 2), 'current_water': round(self.current_water/100,2), 'current_oil': round(self.current_oil/100,2)}
+            message = {'id': self.id, 'timestamp': tempo, 'current_fuel': round(self.current_fuel/100, 4), 'current_water': round(self.current_water/100, 4), 'current_oil': round(self.current_oil/100, 4)}
             channel.basic_publish(exchange='', routing_key='fluids', body=json.dumps(message))
             logger.debug(message)
             time.sleep(1)

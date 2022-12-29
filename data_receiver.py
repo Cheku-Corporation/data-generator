@@ -13,6 +13,7 @@ def main():
 
     channel.queue_declare(queue='fluids') # if queue does not exist, create it
     channel2.queue_declare(queue='velocities') # if queue does not exist, create it
+    channel3.queue_declare(queue='coordinates') # if queue does not exist, create it
     channel4.queue_declare(queue='lights_status') # if queue does not exist, create it
     channel5.queue_declare(queue='car_status') # if queue does not exist, create it
     channel6.queue_declare(queue='tires_status') # if queue does not exist, create it
@@ -22,6 +23,7 @@ def main():
 
     channel.basic_consume(queue='fluids', on_message_callback=callback, auto_ack=True)   #Hardcoded para testar o carro 0
     channel2.basic_consume(queue='velocities', on_message_callback=callback, auto_ack=True)   #Hardcoded para testar o carro 0
+    channel3.basic_consume(queue='coordinates', on_message_callback=callback, auto_ack=True)   #Hardcoded para testar o carro 0
     channel4.basic_consume(queue='lights_status', on_message_callback=callback, auto_ack=True)   #Hardcoded para testar o carro 0
     channel5.basic_consume(queue='car_status', on_message_callback=callback, auto_ack=True)   #Hardcoded para testar o carro 0
     channel6.basic_consume(queue='tires_status', on_message_callback=callback, auto_ack=True)   #Hardcoded para testar o carro 0
