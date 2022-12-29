@@ -15,9 +15,8 @@ import logging
 from datetime import date
 
 
-#Coordenadas de 1 em 1 segundo
-#Probabilidade de reabastecimento de todos os fluidos
-#Apenas mandar os fluidos 1 vez a cada alteração
+#Melhorar a probablididade de reabastecimento de todos os fluidos
+#Melhorar as mudanças de gear
 #ReadMe bonitinho
 
 
@@ -105,6 +104,52 @@ class velocity_sensor:
                         time.sleep(30/self.time_speed)  #Abastecendo
                     else:
                         time.sleep(30)
+
+            
+            #Falta a probabilidade de reabastecimento de agua e oleo
+            if self.current_water < 100:
+                    
+                #Probabilidade de colocar agua
+                somatorio = sum([i for i in range(100)])
+                randnumber = numpy.random.choice([i for i in reversed(range(100))], p=[i/somatorio for i in range(100)])
+                if randnumber > self.current_water:
+                        
+                    somatorio = sum([i for i in range(100-int(self.current_water))])
+                    randwater = numpy.random.choice([i for i in range(100-int(self.current_water))], p=[i/somatorio for i in range(100-int(self.current_water))])
+                    self.current_water += randwater
+                    if self.time_speed > 0:
+                        time.sleep(30/self.time_speed)
+                    else:
+                        time.sleep(30)
+
+            if self.current_oil <= 80:
+                #Tenho de adicionar oleo
+                if self.time_speed > 0:
+                    time.sleep(5*60/self.time_speed)
+                else:
+                    time.sleep(5*60)
+
+                randoil = random.choice([i for i in range(20)], p=[i for i in range(20)])
+                self.current_oil += randoil
+                if self.time_speed > 0:
+                    time.sleep(30/self.time_speed)
+
+            elif self.current_oil < 100:
+                        
+                #Probabilidade de colocar oleo
+                somatorio = sum([i for i in range(100)])
+                randnumber = numpy.random.choice([i for i in reversed(range(100))], p=[i/somatorio for i in range(100)])
+
+                if randnumber > self.current_oil:
+                        
+                    somatorio = sum([i for i in range(100-int(self.current_oil))])
+                    randoil = numpy.random.choice([i for i in range(100-int(self.current_oil))], p=[i/somatorio for i in range(100-int(self.current_oil))])
+                    self.current_oil += randoil
+                    if self.time_speed > 0:
+                        time.sleep(30/self.time_speed)
+                    else:
+                        time.sleep(30)
+
 
             
             if self.engine_problem:
@@ -206,7 +251,7 @@ class velocity_sensor:
                         break
 
 
-                if self.current_fuel <= 0:
+                if self.current_fuel <= 0 or self.current_water <= 0 or self.current_oil <= 80:
                     tempo = time.time()
                     #Mandar também o estado dos pneus e das luzes
                     message = {'id': self.id, 'timestamp': tempo, 'tires_pressure': self.current_tires_pressure, 'tires_temperature': self.current_tires_temperature}
@@ -245,12 +290,16 @@ class velocity_sensor:
 
                     if j == 0:
 
+                        if round(self.current_fuel, 4) == 20:
+                            self.current_fuel = 19.9999
                         self.current_fuel = generate_fuel(self.current_fuel, self.current_gear, self.current_rpm)
 
-                        
+                        if round(self.current_water, 4) == 20:
+                            self.current_water = 19.9999
                         self.current_water = generate_water(self.current_water)
                         
-
+                        if round(self.current_oil, 4) == 20:
+                            self.current_oil = 19.9999
                         self.current_oil = generate_oil(self.current_oil)
 
                         message = {'id': self.id, 'timestamp': time.time(), 'current_fuel': round(self.current_fuel/100, 4), 'current_water': round(self.current_water/100, 4), 'current_oil': round(self.current_oil/100, 4)}
