@@ -115,7 +115,7 @@ Ao executar o script python através do ficheiro run.sh também é possível pas
 
 Exemplo:
 ```bash
-$ ./run.sh -w 20 -f 20 -o 20 -s 10000 -t 1 -h localhost -i 0
+$ ./run.sh -w 20 -f 46 -o 85 -s 10000 -t 1 -h localhost -i 0
 ```
 
 <br>
