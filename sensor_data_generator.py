@@ -24,7 +24,8 @@ def check_and_fix_fluids(self):
         #Tenho de abastecer e espero que alguem me traga o combustivel
         time.sleep(5*60/self.time_speed)
 
-        randfuel = numpy.random.choice([i for i in range(20)], p=[i for i in range(20)])
+        somatorio = sum([i for i in range(20)])
+        randfuel = numpy.random.choice([i for i in range(20)], p=[i/somatorio for i in range(20)])
         self.current_fuel += randfuel
         time.sleep(30/self.time_speed)  #Abastecendotime.sleep(30)
 
@@ -60,7 +61,8 @@ def check_and_fix_fluids(self):
         #Tenho de adicionar oleo
         time.sleep(5*60/self.time_speed)
 
-        randoil = numpy.random.choice([i for i in range(20)], p=[i for i in range(20)])
+        somatorio = sum([i for i in range(20)])
+        randoil = numpy.random.choice([i for i in range(20)], p=[i/somatorio for i in range(20)])
         self.current_oil += randoil
         time.sleep(30/self.time_speed)
 
