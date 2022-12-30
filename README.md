@@ -122,7 +122,7 @@ $ ./run.sh -w 20 -f 46 -o 85 -s 10000 -t 1 -h localhost -i 0
 
 ## Viagens
 
-As viagens são algo que teve de ser pré-definido e encontram-se nos ficheiros do diretório `trips`. As viagens são sempre escolhidas aleatóriamente.
+As viagens são algo que teve de ser pré-definido e encontram-se nos ficheiros do diretório `csv_trips`. As viagens são sempre escolhidas aleatóriamente.
 
 <br>
 
