@@ -1,6 +1,6 @@
 # Gerador de dados
 
-Este gerador de dados pretende simular os dados enviados por um carro inteligente enquanto este faz a sua viagem. São gerados dados como a velocidade a que o veiculo se encontra, a sua localização atual, a mudança em que se encontra, as RPMs atuais, as quantidades de combustivel, óleo e água que o veiculo tem, pressão dos pneus, temperatura dos pneus e temperatura do motor, estado das luzes. Também são gerados acontecimentos aleatórios, como avarias do motor, falta de combustivel, paragem para abastecimento, mudança do estado das luzes, etc.
+Este gerador de dados pretende simular os dados enviados por um carro inteligente enquanto este faz a sua viagem. São gerados dados como a velocidade a que o veículo se encontra, a sua localização atual, a mudança em que se encontra, as RPMs atuais, as quantidades de combustivel, óleo e água que o veículo tem, pressão dos pneus, temperatura dos pneus e temperatura do motor, estado das luzes. Também são gerados acontecimentos aleatórios, como avarias do motor, falta de combustivel, paragem para abastecimento, mudança do estado das luzes, etc.
 </br>
 
 # Pré-requisitos
