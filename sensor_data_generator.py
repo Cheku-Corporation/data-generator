@@ -14,8 +14,6 @@ from termometer_generator import *
 import logging
 from datetime import date
 
-#Melhorar a qualidade do codigo
-
 #Melhorar as mudanças de gear
 #ReadMe bonitinho
 
@@ -24,17 +22,11 @@ def check_and_fix_fluids(self):
     if self.current_fuel == 0:
 
         #Tenho de abastecer e espero que alguem me traga o combustivel
-        if self.time_speed > 0:
-            time.sleep(5*60/self.time_speed)
-        else:
-            time.sleep(5*60)
+        time.sleep(5*60/self.time_speed)
 
         randfuel = random.choice([i for i in range(20)], p=[i for i in range(20)])
         self.current_fuel += randfuel
-        if self.time_speed > 0:
-            time.sleep(30/self.time_speed)  #Abastecendo
-        else:
-            time.sleep(30)
+        time.sleep(30/self.time_speed)  #Abastecendotime.sleep(30)
 
     elif self.current_fuel < 100:
 
@@ -48,10 +40,7 @@ def check_and_fix_fluids(self):
             somatorio = sum([i for i in range(100-int(self.current_fuel))])
             randfuel = numpy.random.choice([i for i in range(100-int(self.current_fuel))], p=[i/somatorio for i in range(100-int(self.current_fuel))])
             self.current_fuel += randfuel
-            if self.time_speed > 0:
-                time.sleep(30/self.time_speed)  #Abastecendo
-            else:
-                time.sleep(30)
+            time.sleep(30/self.time_speed)  #Abastecendo
 
     
     #Falta a probabilidade de reabastecimento de agua e oleo
@@ -65,22 +54,15 @@ def check_and_fix_fluids(self):
             somatorio = sum([i for i in range(100-int(self.current_water))])
             randwater = numpy.random.choice([i for i in range(100-int(self.current_water))], p=[i/somatorio for i in range(100-int(self.current_water))])
             self.current_water += randwater
-            if self.time_speed > 0:
-                time.sleep(30/self.time_speed)
-            else:
-                time.sleep(30)
+            time.sleep(30/self.time_speed)
 
     if self.current_oil <= 80:
         #Tenho de adicionar oleo
-        if self.time_speed > 0:
-            time.sleep(5*60/self.time_speed)
-        else:
-            time.sleep(5*60)
+        time.sleep(5*60/self.time_speed)
 
         randoil = random.choice([i for i in range(20)], p=[i for i in range(20)])
         self.current_oil += randoil
-        if self.time_speed > 0:
-            time.sleep(30/self.time_speed)
+        time.sleep(30/self.time_speed)
 
     elif self.current_oil < 100:
                 
@@ -93,10 +75,7 @@ def check_and_fix_fluids(self):
             somatorio = sum([i for i in range(100-int(self.current_oil))])
             randoil = numpy.random.choice([i for i in range(100-int(self.current_oil))], p=[i/somatorio for i in range(100-int(self.current_oil))])
             self.current_oil += randoil
-            if self.time_speed > 0:
-                time.sleep(30/self.time_speed)
-            else:
-                time.sleep(30)
+            time.sleep(30/self.time_speed)
 
 
 def car_start(self, logger, channel, channel4, channel5, channel6):
@@ -139,19 +118,13 @@ def stop_car(self, logger, channel, channel4, channel5, channel6):
 def fix_problems(self, logger, channel4):
     if self.engine_problem:
         #Tenho de esperar o carro esfriar e que alguém o arranje
-        if self.time_speed > 0:
-            time.sleep(10*60/self.time_speed)
-        else:
-            time.sleep(10*60)
+        time.sleep(10*60/self.time_speed)
         self.engine_problem = False
         self.current_engine_temperature = 70
 
     if self.current_lights == "DEAD":
         #Tenho de esperar o carro esfriar e que alguém o arranje
-        if self.time_speed > 0:
-            time.sleep(1*60/self.time_speed)
-        else:
-            time.sleep(1*60)
+        time.sleep(1*60/self.time_speed)
         self.current_lights = "OFF"
         # print("Enviar mensagem de que as luzes estão a funcionar")
         message = {'id': self.id, 'timestamp': time.time(), 'lights': self.current_lights}
@@ -162,7 +135,7 @@ def fix_problems(self, logger, channel4):
 
 
 class velocity_sensor:
-    def __init__(self, id=0, current_velocity=0.0, current_fuel = 100, current_water = 100, current_oil = 100, current_tires_temperature = 40, current_engine_temperature = 70, time_between_trips = 30*60, time_speed = 1):#, message_speed = 1):
+    def __init__(self, id=0, current_velocity=0.0, current_fuel = 100, current_water = 100, current_oil = 100, current_tires_temperature = 40, current_engine_temperature = 70, time_between_trips = 30*60, time_speed = 1, host = 'localhost'):#, message_speed = 1):
         self.id = id    #Vehicle ID
         self.current_velocity = current_velocity    #Initial Current velocity
         self.current_gear = 0   #Initial Current gear
@@ -184,10 +157,11 @@ class velocity_sensor:
         self.time_between_trips = time_between_trips
         self.time_speed = time_speed
 
+        self.host = host
+
 
     def run(self):
-        connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
-        # connection = pika.BlockingConnection(pika.ConnectionParameters(host='172.19.0.3'))
+        connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host))
         
         channel = connection.channel()
         channel2 = connection.channel()
@@ -318,8 +292,7 @@ class velocity_sensor:
             #Acabei a minha viagem, vou esperar um coto antes de voltar a fazer outra
             stop_car(self, logger, channel, channel4, channel5, channel6)
 
-            if self.time_between_trips > 0:
-                time.sleep(self.time_between_trips)    #Aguardar time_speed antes de voltar a fazer uma viagem
+            time.sleep(self.time_between_trips)    #Aguardar time_speed antes de voltar a fazer uma viagem
 
 
 
@@ -331,10 +304,29 @@ if __name__ == '__main__':
     parse.add_argument('-o', '--oil', default=100, type=float, help='Current oil of the car')
     parse.add_argument('-tt', '--time_trips', default=30*60, type=float, help='Time between trips')
     parse.add_argument('-ts', '--time_speed', default=1, type=float, help='Speed of time when the car is stopped')
+    parse.add_argument('-ho', '--host', default='localhost', type=str, help='The host of the RabbitMQ server')
     # parse.add_argument('-tm', '--time_message', default=1, type=float, help='Time to send a new message')
     args = parse.parse_args()
+    if args.id < 0:
+        print("Id must be positive")
+        exit(1)
+    if args.fuel < 0 or args.fuel > 100:
+        print("Fuel must be between 0 and 100")
+        exit(1)
+    if args.water < 0 or args.water > 100:
+        print("Water must be between 0 and 100")
+        exit(1)
+    if args.oil < 0 or args.oil > 100:
+        print("Oil must be between 0 and 100")
+        exit(1)
+    if args.time_trips < 0:
+        print("Time between trips must be positive")
+        exit(1)
+    if args.time_speed < 0:
+        print("Time speed must be positive")
+        exit(1)
     try:
-        v0 = velocity_sensor(id=args.id, current_velocity=0, current_fuel=args.fuel, current_water=args.water, current_oil=args.oil, time_between_trips=args.time_trips, time_speed=args.time_speed)#, message_speed=args.time_message)
+        v0 = velocity_sensor(id=args.id, current_velocity=0, current_fuel=args.fuel, current_water=args.water, current_oil=args.oil, time_between_trips=args.time_trips, time_speed=args.time_speed, host=args.host)#, message_speed=args.time_message)
 
         if not os.path.exists("logs/"):
             os.makedirs("logs/")
