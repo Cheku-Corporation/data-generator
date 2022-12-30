@@ -14,9 +14,6 @@ from termometer_generator import *
 import logging
 from datetime import date
 
-#Melhorar as mudanças de gear
-#ReadMe bonitinho
-
 
 def check_and_fix_fluids(self):
     if self.current_fuel == 0:
@@ -240,10 +237,25 @@ class velocity_sensor:
                 distancia = distance(self.current_coordinates[0], self.current_coordinates[1], self.current_trip[0][0], self.current_trip[0][1])  #m/s = #distancia/1000km*3600 = km/h
                 velocidade_media = distancia/1000*(3600)  #Velocidade média em km/h naquele segundo
                 aceleracao = (velocidade_media-self.current_velocity)/5 #5 pois é metade de 1 segundo que seriam 10 iterações, ou seja, 5 segundos para igualar e 5 segundos para afastar de forma a que a velocidade média seja coerente
-                if abs(aceleracao) > 4:  #Alguma coordenada acabou não sendo gerada
+                if abs(aceleracao) > 5:  #Alguma coordenada acabou não sendo gerada
                     self.current_velocity = velocidade_media
+                    if self.current_velocity >= 90:
+                        self.current_gear = 6
+                    elif self.current_velocity >= 65:
+                        self.current_gear = 5
+                    elif self.current_velocity >= 45:
+                        self.current_gear = 4
+                    elif self.current_velocity >= 25:
+                        self.current_gear = 3
+                    elif self.current_velocity >= 15:
+                        self.current_gear = 2 
+                    elif self.current_velocity <= 0:
+                        self.current_gear = 0
+                    else:
+                        self.current_gear = 1
                     aceleracao = 0
 
+                
                 self.current_gear = gear(self.current_velocity, aceleracao, self.current_gear)
 
                 

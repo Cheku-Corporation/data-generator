@@ -22,30 +22,30 @@ def distance(lon1, lat1, lon2, lat2):
 def gear(current_velocity, aceleracao, gear):
     if aceleracao > 0:
 
-        if current_velocity >= 85:
+        if current_velocity >= 90:
             return 6
-        elif current_velocity >= 60:
+        elif current_velocity >= 65:
             return 5
-        elif current_velocity >= 40:
+        elif current_velocity >= 45:
             return 4
-        elif current_velocity >= 20:
+        elif current_velocity >= 25:
             return 3
-        elif current_velocity >= 10:
+        elif current_velocity >= 15:
             return 2 
         else:
             return 1
     
     elif aceleracao < 0:
 
-        if current_velocity <= 15:
+        if current_velocity <= 5:
             return 1
-        elif current_velocity <= 20:
+        elif current_velocity <= 10:
             return 2
-        elif current_velocity <= 40:
+        elif current_velocity <= 20:
             return 3
-        elif current_velocity <= 60:
+        elif current_velocity <= 40:
             return 4
-        elif current_velocity <= 85:
+        elif current_velocity <= 60:
             return 5
         else:
             return 6
@@ -61,10 +61,10 @@ def gear(current_velocity, aceleracao, gear):
 def generate_rpm(current_velocity, gear):
 
     if gear == 0:
-        rpm = 900
+        rpm = 700
 
     else:
-        rpm = 900 + current_velocity / gear * 100
+        rpm = 700 + current_velocity / gear * 100
         
     
     return rpm
