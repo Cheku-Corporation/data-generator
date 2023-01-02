@@ -14,17 +14,39 @@ from termometer_generator import *
 import logging
 from datetime import date
 
+def sleep_timer(tempo, channel7):
+    if tempo < 5:
+        time.sleep(tempo)
+        return
+    
+    
+    while tempo > 5:
+        time.sleep(5)
+        tempo -= 5
 
-def check_and_fix_fluids(self):
+        message = {'keep_alive': "keep_alive"}
+        channel7.basic_publish(exchange='', routing_key='keep_alive', body=json.dumps(message))
+        logger.debug(message)
+
+        channel7.queue_purge(queue='keep_alive')
+
+
+    time.sleep(tempo)
+    return
+
+
+def check_and_fix_fluids(self, channel7):
     if self.current_fuel == 0:
 
         #Tenho de abastecer e espero que alguem me traga o combustivel
-        time.sleep(5*60/self.time_speed)
+        sleep_timer(5*60/self.time_speed, channel7)
 
         somatorio = sum([i for i in range(20)])
         randfuel = numpy.random.choice([i for i in range(20)], p=[i/somatorio for i in range(20)])
         self.current_fuel += randfuel
-        time.sleep(30/self.time_speed)  #Abastecendotime.sleep(30)
+        
+        sleep_timer(30/self.time_speed, channel7) #Abastecendotime.sleep(30)
+        
 
     elif self.current_fuel < 100:
 
@@ -38,7 +60,8 @@ def check_and_fix_fluids(self):
             somatorio = sum([i for i in range(100-int(self.current_fuel))])
             randfuel = numpy.random.choice([i for i in range(100-int(self.current_fuel))], p=[i/somatorio for i in range(100-int(self.current_fuel))])
             self.current_fuel += randfuel
-            time.sleep(30/self.time_speed)  #Abastecendo
+            sleep_timer(30/self.time_speed, channel7)  #Abastecendo
+            
 
     
     #Falta a probabilidade de reabastecimento de agua e oleo
@@ -52,16 +75,16 @@ def check_and_fix_fluids(self):
             somatorio = sum([i for i in range(100-int(self.current_water))])
             randwater = numpy.random.choice([i for i in range(100-int(self.current_water))], p=[i/somatorio for i in range(100-int(self.current_water))])
             self.current_water += randwater
-            time.sleep(30/self.time_speed)
+            sleep_timer(30/self.time_speed, channel7)
 
     if self.current_oil <= 80:
         #Tenho de adicionar oleo
-        time.sleep(5*60/self.time_speed)
+        sleep_timer(5*60/self.time_speed, channel7)
 
         somatorio = sum([i for i in range(20)])
         randoil = numpy.random.choice([i for i in range(20)], p=[i/somatorio for i in range(20)])
         self.current_oil += randoil
-        time.sleep(30/self.time_speed)
+        sleep_timer(30/self.time_speed, channel7)
 
     elif self.current_oil < 100:
                 
@@ -74,7 +97,7 @@ def check_and_fix_fluids(self):
             somatorio = sum([i for i in range(100-int(self.current_oil))])
             randoil = numpy.random.choice([i for i in range(100-int(self.current_oil))], p=[i/somatorio for i in range(100-int(self.current_oil))])
             self.current_oil += randoil
-            time.sleep(30/self.time_speed)
+            sleep_timer(30/self.time_speed, channel7)
 
 
 def car_start(self, logger, channel, channel4, channel5, channel6):
@@ -114,16 +137,16 @@ def stop_car(self, logger, channel, channel4, channel5, channel6):
 
 
 
-def fix_problems(self, logger, channel4):
+def fix_problems(self, logger, channel4, channel7):
     if self.engine_problem:
         #Tenho de esperar o carro esfriar e que alguém o arranje
-        time.sleep(10*60/self.time_speed)
+        sleep_timer(10*60/self.time_speed, channel7)
         self.engine_problem = False
         self.current_engine_temperature = 70
 
     if self.current_lights == "DEAD":
         #Tenho de esperar o carro esfriar e que alguém o arranje
-        time.sleep(1*60/self.time_speed)
+        sleep_timer(1*60/self.time_speed, channel7)
         self.current_lights = "OFF"
         # print("Enviar mensagem de que as luzes estão a funcionar")
         message = {'id': self.id, 'timestamp': time.time(), 'lights': self.current_lights}
@@ -168,6 +191,7 @@ class velocity_sensor:
         channel4 = connection.channel()
         channel5 = connection.channel()
         channel6 = connection.channel()
+        channel7 = connection.channel()
 
         channel.queue_declare(queue='fluids') # if queue does not exist, create it
         channel2.queue_declare(queue='velocities') # if queue does not exist, create it
@@ -175,17 +199,20 @@ class velocity_sensor:
         channel4.queue_declare(queue='lights_status') # if queue does not exist, create it
         channel5.queue_declare(queue='car_status') # if queue does not exist, create it
         channel6.queue_declare(queue='tires_status') # if queue does not exist, create it
+        channel6.queue_declare(queue='keep_alive') # if queue does not exist, create it
+        
 
         while True:
             if self.current_trip == []:
                 #Preciso de gerar uma nova viagem
                 self.current_trip = coordinates_generator.generate_random_trip()
+            
 
             #Verificar se o carro tem fluidos suficientes para ligar
-            check_and_fix_fluids(self)
+            check_and_fix_fluids(self, channel7)
 
             #Verificar se o carro tem problemas de motor ou de luzes
-            fix_problems(self, logger, channel4)
+            fix_problems(self, logger, channel4, channel7)
 
             #Preciso de ligar o carro
             car_start(self, logger, channel, channel4, channel5, channel6)
@@ -306,7 +333,7 @@ class velocity_sensor:
             #Acabei a minha viagem, vou esperar um coto antes de voltar a fazer outra
             stop_car(self, logger, channel, channel4, channel5, channel6)
 
-            time.sleep(self.time_between_trips)    #Aguardar time_speed antes de voltar a fazer uma viagem
+            sleep_timer(self.time_between_trips, channel7)    #Aguardar time_speed antes de voltar a fazer uma viagem
 
 
 
